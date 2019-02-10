@@ -14,7 +14,7 @@ physics.setGravity( 0, 19.8 )
  
 -- Initialize variables
 local lives = 3
-local nrOfBalls = 25
+local nrOfBalls = 15
 local score = 0
  
 local ballsTable = {}
@@ -22,7 +22,8 @@ local ballsTable = {}
 local gameLoopTimer
 local livesText
 local scoreText
-local debugText
+local ballsText
+local messageScreen
 
 local backGroup
 local mainGroup
@@ -57,44 +58,53 @@ local floor
 local function updateText()
     livesText.text = "Lives: " .. lives
     scoreText.text = "Score: " .. score
+    ballsText.text = "Balls: " .. nrOfBalls
 end
-
-local function addFloorBody()
-    physics.addBody( floor, "static", {bounce=0.2})
-end
-
-local function endAfterTapAnimation()
-    updateText()
-    addFloorBody()
-    resultText = display.newText( mainGroup, "Normal 222 Ball", display.contentCenterX, display.contentCenterY - 100, native.systemFont, 150 )
-end
-
-local function playAfterTapAnimation(ballType)
-    physics.removeBody( floor )
-    print(ballType)
-
-    resultText = display.newText( mainGroup, "Normal Ball", display.contentCenterX, display.contentCenterY - 100, native.systemFont, 150 )
-
-    transition.to( resultText, { time=3000, alpha=0, onComplete=endAfterTapAnimation })
-    --display.remove(resultText)
-    --timer.performWithDelay(4000, addFloorBody)
-
-end
-
-
 
 local function doLevelUp()
+
+    updateText()
+    physics.addBody( floor, "static", {bounce=0.2})
+
     -- Clear the ballTable
     for i = #ballsTable, 1, -1 do
         local thisBall = ballsTable[i]
         display.remove( thisBall )
         table.remove( ballsTable, i )
     end
+
+    initialiseBalls(nrOfBalls)
+
 end
 
 local function doGameOver()
 	composer.setVariable( "finalScore", score )
     composer.gotoScene( "highscores", { time=800, effect="crossFade" } )
+end
+
+local function determineGamestatus()
+    print("Determine")
+    if (lives == 0) then
+    -- goto Game Over
+    elseif (nrOfBalls == 0) then
+        -- goto Ultimate Winner
+    else
+        -- goto Next
+        doLevelUp()
+    end
+end
+
+local function playTapAnimation(ballType)
+    physics.removeBody( floor )
+    print(ballType)
+
+    messageScreen = display.newImageRect( mainGroup, "images/message.png", 200, 100)
+    messageScreen.x = display.contentCenterX
+    messageScreen.y = display.contentCenterY
+    
+    -- Plays the animation and then calls the final function
+    transition.to( messageScreen, { time=3000, alpha=0, width=1600, height=800, onComplete=determineGamestatus })
+
 end
 
 local function tapBall( event )
@@ -122,20 +132,12 @@ local function tapBall( event )
         nrOfBalls = nrOfBalls - 1
     end
 
-    playAfterTapAnimation(ball.name)
-
-    if (lives == 0) then
-        -- goto Game Over
-    elseif (nrOfBalls == 0) then
-        -- goto Ultimate Winner
-    else
-        -- goto Next
-        --doLevelUp()
-    end
+    playTapAnimation(ball.name)
 
 end
 
-local function initialiseBalls(numberOfBalls)
+-- This function is not local, since it is used in multiple places
+function initialiseBalls(numberOfBalls)
 
     -- Calculate the ball-radius according to the number of balls
     local ballRadius = math.floor((viewportHeight - 300) / math.sqrt(numberOfBalls) / 2)
@@ -195,7 +197,6 @@ local function initialiseBalls(numberOfBalls)
         table.insert( ballsTable, newBall )
     end
 end
-
  
 local function gameLoop()
  
@@ -253,7 +254,6 @@ local function onCollision( event )
                 end
             end
         else
-            --debugText.text = "raak";
         end
     end
 end
@@ -299,12 +299,12 @@ function scene:create( event )
     floor = display.newImageRect( backGroup, "images/block.png", viewportWidth, 100 )
     floor.x = display.contentCenterX
     floor.y = viewportBottom + 50
-    addFloorBody() -- The floor will be removed and added when necessary, so a function is needed
+    physics.addBody( floor, "static", {bounce=0.2})
 
 	-- Display lives and score
 	livesText = display.newText( uiGroup, "Lives: " .. lives, viewportLeft + 200, viewportTop + 80, native.systemFont, 36 )
     scoreText = display.newText( uiGroup, "Score: " .. score, viewportLeft + 400, viewportTop + 80, native.systemFont, 36 )
-    debugText = display.newText( uiGroup, "Debug", viewportLeft + 600, viewportTop + 80, native.systemFont, 36 ) 
+    ballsText = display.newText( uiGroup, "Balls: " .. nrOfBalls, viewportLeft + 600, viewportTop + 80, native.systemFont, 36 ) 
 
     explosionSound = audio.loadSound( "audio/explosion.wav" )
 	fireSound = audio.loadSound( "audio/fire.wav" )
