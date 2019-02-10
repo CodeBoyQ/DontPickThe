@@ -138,10 +138,6 @@ function initialiseBalls(numberOfBalls)
     local ballReleaseAreaMinY = screenTop - ballReleaseAreaHeight + ballRadius
     local ballReleaseAreaMaxY = screenTop - ballRadius
 
-    print ("ballRadiauss: " .. ballRadius)
-    print ("max" .. ballReleaseAreaMaxY)
-    print ("min" .. ballReleaseAreaMinY)
-
     -- Create the balls
     local bomb = math.random(1, numberOfBalls)
 
@@ -178,15 +174,6 @@ function initialiseBalls(numberOfBalls)
         -- Position ball in random starting position
         newBall.x = math.random (ballReleaseAreaMinX, ballReleaseAreaMaxX)
         newBall.y = math.random (ballReleaseAreaMinY, ballReleaseAreaMaxY)
-
-       -->> 
-       -- -302
-       -- -376
-       -- ok
-
-       -- max-458
-       -- min-220
-       -- fout
 
         -- Add physics and listener
         physics.addBody( newBall, "dynamic", { radius=ballRadius, density=50, friction = 0.3, bounce=0.2 } )
