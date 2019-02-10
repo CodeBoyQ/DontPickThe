@@ -16,7 +16,12 @@ local function gotoHighScores()
     composer.gotoScene( "highscores" )
 end
 
-
+local function doWithBall(scene, ball)
+    print("Start hideBallContent")
+	--ball = display.newImageRect( scene, "images/ball_3.png", 200, 200) 
+	ball.x = 500
+	ball.y = 400
+end
 
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
@@ -24,6 +29,8 @@ end
 
 -- create()
 function scene:create( event )
+
+	
 
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
@@ -43,9 +50,14 @@ function scene:create( event )
 	highScoresButton:setFillColor( 0.75, 0.78, 1 )
 	
 	playButton:addEventListener( "tap", gotoGame )
-    highScoresButton:addEventListener( "tap", gotoHighScores )
+	highScoresButton:addEventListener( "tap", gotoHighScores )
+	
+	--local a = math.random (-10, -20)
+	--print(a)
 
 end
+
+
 
 
 -- show()
