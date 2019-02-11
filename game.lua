@@ -13,7 +13,7 @@ physics.start()
 physics.setGravity( 0, 19.8 )
  
 -- Initialize variables
-local nrOfBalls = 25
+local nrOfBalls = 15
 local joker = 0
 local score = 0
  
@@ -53,10 +53,47 @@ local musicTrack
 
 local floor
 
+-- Setup Image sheet for ball
+local ballsSheetOptions =
+{
+    width = 175,
+    height = 175,
+    numFrames = 8
+}
+
+local ballsImageSheet = graphics.newImageSheet( "images/balls_imagesheet.png", ballsSheetOptions )
+
+local sequencesBall = {
+    {
+        name = "notUsed",
+        start = 1,
+        count = 8,
+        time = 800,
+        loopCount = 0
+    },
+}
+
+local normalFrame = 1
+local ball1Frame = 2
+local ball3Frame = 3
+local ball7Frame = 4
+local jokerFrame = 5
+local bombFrame = 6
+
 local function updateText()
     ballsText.text = "Balls: " .. nrOfBalls
     jokerText.text = "Joker: " .. joker
     scoreText.text = "Score: " .. score
+end
+
+local function clearBallTable()
+
+    -- Remove balls from table and display
+    for i = #ballsTable, 1, -1 do
+        local thisBall = ballsTable[i]
+        display.remove( thisBall )
+        table.remove( ballsTable, i )
+    end
 end
 
 local function determineGamestatus()
@@ -70,18 +107,13 @@ local function determineGamestatus()
         -- Next Level
         updateText()
         physics.addBody( floor, "static", {bounce=0.2})
-        for i = #ballsTable, 1, -1 do
-            local thisBall = ballsTable[i]
-            display.remove( thisBall )
-            table.remove( ballsTable, i )
-        end
+        clearBallTable()
         initialiseBalls(nrOfBalls)
     end
 end
 
-local function playTapAnimation(ballType)
+local function playTapAnimation(ball)
     physics.removeBody( floor )
-    print(ballType)
 
     -- Show the content of all the balls
     for i = #ballsTable, 1, -1 do
@@ -123,7 +155,7 @@ local function tapBall( event )
         nrOfBalls = nrOfBalls - 1
     end
 
-    playTapAnimation(ball.name)
+    playTapAnimation(ball)
 
 end
 
@@ -131,7 +163,8 @@ end
 function initialiseBalls(numberOfBalls)
 
     -- Calculate the ball-radius according to the number of balls
-    local ballRadius = math.floor((screenHeight * 0.60) / math.sqrt(numberOfBalls) / 2)
+    --local ballRadius = math.floor((screenHeight * 0.60) / math.sqrt(numberOfBalls) / 2)
+    local ballRadius = 85
 
     local ballReleaseAreaMinX = screenLeft + ballRadius
     local ballReleaseAreaMaxX = screenLeft + screenWidth - ballRadius
@@ -144,7 +177,8 @@ function initialiseBalls(numberOfBalls)
     for i = numberOfBalls, 1, -1 do
 
         -- Initiate ball Note: Ball template is needed to have a reference for deletion after all the balls are created        
-        local newBall = display.newImageRect( mainGroup, "images/ball_bomb.png", 2 * ballRadius, 2 * ballRadius )
+        newBall = display.newSprite( ballsImageSheet, sequencesBall )
+        newBall:setFrame(3)
 
         -- Determine the ball type
         if (bomb == i) then
@@ -166,9 +200,6 @@ function initialiseBalls(numberOfBalls)
             showBallContent(newBall)
         else
             hideBallContent(newBall)
-            --local height = newBall.height
-            --local width = newBall.width
-            --newBall = display.newImageRect( mainGroup, "images/ball_joker.png", width, height) 
         end 
         
         -- Position ball in random starting position
@@ -184,36 +215,26 @@ function initialiseBalls(numberOfBalls)
 
     end
 
-    --display.remove(ballTemplate)
-
 end
 
 function showBallContent(ball) 
-    print("Start showBallContent")
-    local height = ball.height
-    local width = ball.width
-    local image
     if (ball.name == "Bomb") then
-        image = "images/ball_bomb.png"
+        ball:setFrame(bombFrame)
     elseif (ball.name == "7Balls") then
-        image = "images/ball_7.png"
+        ball:setFrame(ball7Frame)
     elseif (ball.name == "3Balls") then
-        image = "images/ball_3.png"
+        ball:setFrame(ball3Frame)
     elseif (ball.name == "1Balls") then
-        image = "images/ball_1.png"
+        ball:setFrame(ball1Frame)
     elseif (ball.name == "Joker") then
-        image = "images/ball_joker.png"
+        ball:setFrame(jokerFrame)
     else
-        image = "images/ball.png"
+        ball:setFrame(normalFrame)
     end
-    ball = display.newImageRect( mainGroup, image, width, height) 
 end
 
 function hideBallContent(ball)
-    --print("Start hideBallContent")
-    local height = ball.height
-    local width = ball.width
-    ball = display.newImageRect( mainGroup, "images/ball_joker.png", width, height) 
+    ball:setFrame(normalFrame)
 end
  
 local function gameLoop()
@@ -374,7 +395,8 @@ function scene:destroy( event )
 	audio.dispose( fireSound )
     audio.dispose( musicTrack )
     
-    --TODO dispose of all the balls in the table
+    -- Dispose of all the balls in the table
+    clearBallTable()
 
 end
 
