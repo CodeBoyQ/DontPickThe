@@ -13,7 +13,6 @@ physics.start()
 physics.setGravity( 0, 19.8 )
  
 -- Initialize variables
-local nrOfBalls = 15
 local joker = 0
 local score = 0
  
@@ -29,17 +28,21 @@ local backGroup
 local mainGroup
 local uiGroup
 
+local nrOfBalls = 15
+
 -- Probability system (order small to large chance) minimum is 10
-local chance7Balls = 100 -- One out of x balls each turn will give you 7 extra balls
-local chance3Balls = 30 -- One out of x balls each turn will give you 3 extra balls
-local chance1Balls = 10 -- One out of x balls each turn will give you 1 extra balls
-local chanceJoker = 10 -- One out of x balls each turn will give you an extra life
+local chance7Balls    = 100 -- Every ball has 1 out of x chance to give you 7 extra balls
+local chance3Balls    =  30 -- Every ball has 1 out of x chance to give you 3 extra balls
+local chance1Balls    =  10 -- Every ball has 1 out of x chance to give you 1 extra balls
+local chanceJoker     =  50 -- Every ball has 1 out of x chance to give you a Joker
+local chanceExtraBomb =  30 -- Every ball has 1 out of x chance to be an extra Bomb
 
 -- Debug options
-local ballContentVisible = false
+local ballContentVisible = true
 
 -- The height of the content area where the balls are released
-local ballReleaseAreaHeight = 800
+local ballReleaseAreaHeight = 800 
+local ballRadius = 150
 
 -- Actual device screen values (This will differ per device)
 local screenTop = display.screenOriginY
@@ -56,8 +59,8 @@ local floor
 -- Setup Image sheet for ball
 local ballsSheetOptions =
 {
-    width = 175,
-    height = 175,
+    width = ballRadius*2,
+    height = ballRadius*2,
     numFrames = 8
 }
 
@@ -94,6 +97,7 @@ local function clearBallTable()
         display.remove( thisBall )
         table.remove( ballsTable, i )
     end
+
 end
 
 local function determineGamestatus()
@@ -162,10 +166,6 @@ end
 -- This function is not local, since it is used in multiple places
 function initialiseBalls(numberOfBalls)
 
-    -- Calculate the ball-radius according to the number of balls
-    --local ballRadius = math.floor((screenHeight * 0.60) / math.sqrt(numberOfBalls) / 2)
-    local ballRadius = 85
-
     local ballReleaseAreaMinX = screenLeft + ballRadius
     local ballReleaseAreaMaxX = screenLeft + screenWidth - ballRadius
     local ballReleaseAreaMinY = screenTop - ballReleaseAreaHeight + ballRadius
@@ -178,6 +178,7 @@ function initialiseBalls(numberOfBalls)
 
         -- Initiate ball Note: Ball template is needed to have a reference for deletion after all the balls are created        
         newBall = display.newSprite( ballsImageSheet, sequencesBall )
+        --newBall:scale( 300, 400 )
         newBall:setFrame(3)
 
         -- Determine the ball type
@@ -191,8 +192,8 @@ function initialiseBalls(numberOfBalls)
             newBall.name = "1Ball"
         elseif (math.random(1, chanceJoker) == 8) then
             newBall.name = "Joker"
-        else
-            newBall.name = "Normal"
+        elseif (math.random(1, chanceExtraBomb) == 3) then
+            newBall.name = "Bomb"
         end
 
         -- Make the content visible or not
@@ -311,7 +312,7 @@ function scene:create( event )
 
     -- Load the background and walls
     -- The walls are postioned to the left, bottom and right of the actual device screen
-	local background = display.newImageRect( backGroup, "images/background.png", "720", "1140" )
+	local background = display.newImageRect( backGroup, "images/background.png", screenWidth, screenHeight )
 	background.x = display.contentCenterX
     background.y = display.contentCenterY
 
@@ -367,7 +368,7 @@ function scene:hide( event )
 
 	local sceneGroup = self.view
 	local phase = event.phase
-
+ 
 	if ( phase == "will" ) then
 		-- Code here runs when the scene is on screen (but is about to go off screen)
 		timer.cancel( gameLoopTimer )

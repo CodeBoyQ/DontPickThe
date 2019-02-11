@@ -7,15 +7,10 @@ application =
 {
 	content =
 	{
-		width = 640,
-		height = 960, 
+		width = 1280,
+		height = 1920, 
 		scale = "letterBox",
 		fps = 60,
-		
-		imageSuffix =
-		{
-			    ["@2x"] = 1.2,
-		},
 
 	},
 }
