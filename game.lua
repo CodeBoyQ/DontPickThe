@@ -13,11 +13,13 @@ physics.start()
 physics.setGravity( 0, 19.8 )
  
 -- Initialize variables
-local joker = 0
-local score = 0
-local jokerImage
-local scoreText
+local nrOfBalls = 15
 local ballsText 
+local joker = 0
+local jokerImage
+local score = 0
+local scoreText
+
 
 local ballsTable = {}
 local gameLoopTimer
@@ -29,22 +31,22 @@ local backGroup
 local mainGroup
 local uiGroup
 
-local nrOfBalls = 15
 local maxNrOfBalls = 25
 local difficulty
 
 -- Probability system (order small to large chance) minimum is 10
-local chance7Balls    = 100 -- Every ball has 1 out of x chance to give you 7 extra balls
-local chance3Balls    =  30 -- Every ball has 1 out of x chance to give you 3 extra balls
-local chance1Balls    =  10 -- Every ball has 1 out of x chance to give you 1 extra balls
-local chanceJoker     =  50 -- Every ball has 1 out of x chance to give you a Joker. If the user already has a joker this chance = 0
-local chanceExtraBomb =  30 -- Every ball has 1 out of x chance to be an extra Bomb
+local chance7Balls    = 50 -- Every ball has 1 out of x chance to give you 7 extra balls
+local chance3Balls    =  20 -- Every ball has 1 out of x chance to give you 3 extra balls
+local chance1Balls    =  7 -- Every ball has 1 out of x chance to give you 1 extra balls
+local chanceJoker     =  20 -- Every ball has 1 out of x chance to give you a Joker. If the user already has a joker this chance = 0
+local chanceExtraBomb =  20 -- Every ball has 1 out of x chance to be an extra Bomb
 
--- Debug options
+-- Debug options, set all to false for production mode
 local ballContentVisible = true
+local dumpMemoryDebugMode = false
 
 -- The height of the content area where the balls are released
-local ballReleaseAreaHeight = 800 
+local ballReleaseAreaHeight = 800
 local ballRadius = 150
 
 -- Actual device screen values (This will differ per device)
@@ -53,6 +55,7 @@ local screenLeft = display.screenOriginX
 local screenHeight = display.actualContentHeight
 local screenWidth = display.actualContentWidth
 
+-- Sound variable
 local explosionSound
 local fireSound
 local musicTrack
@@ -86,35 +89,6 @@ local ball7Frame = 4
 local jokerFrame = 5
 local bombFrame = 6
 
-
--- @DEBUG monitor Memory Usage
-local printMemUsage = function()  
-    local memUsed = (collectgarbage("count"))
-    local texUsed = system.getInfo( "textureMemoryUsed" ) / 1048576 -- Reported in Bytes
-   
-    print("\n---------MEMORY USAGE INFORMATION---------")
-    print("System Memory: ", string.format("%.00f", memUsed), "KB")
-    print("Texture Memory:", string.format("%.03f", texUsed), "MB")
-    print("------------------------------------------\n")
-end
-
--- Only load memory monitor if running in simulator
-if (system.getInfo("environment") == "simulator") then
-    -- Uncomment the code below to show memory usage
-	--Runtime:addEventListener( "enterFrame", printMemUsage)
-end
-
-local function updateStatubar()
-    ballsText.text = "Balls: " .. nrOfBalls
-    jokerText.text = "Joker: " .. joker
-    scoreText.text = "Score: " .. score
-    if (joker == 1) then
-        jokerImage.alpha = 0.3
-    else
-        jokerImage.alpha = 1
-    end
-end
-
 local function clearBallTable()
 
     -- Remove balls from table and display
@@ -124,6 +98,16 @@ local function clearBallTable()
         table.remove( ballsTable, i )
     end
 
+end
+
+local function updateStatubar()
+    ballsText.text = nrOfBalls
+    scoreText.text = score
+    if (joker == 1) then
+        jokerImage.alpha = 1
+    else
+        jokerImage.alpha = 0.3
+    end
 end
 
 local function determineGamestatus()
@@ -138,18 +122,20 @@ local function determineGamestatus()
         updateStatubar()
         physics.addBody( floor, "static", {bounce=0.2})
         clearBallTable()
-        initialiseBalls(nrOfBalls)
+        dropBalls(nrOfBalls)
     end
 end
 
 local function playTapAnimation(ball)
-    physics.removeBody( floor )
 
     -- Show the content of all the balls
     for i = #ballsTable, 1, -1 do
         local thisBall = ballsTable[i]
         showBallContent(thisBall)
     end
+
+    -- Let the balls fall through the ground
+    physics.removeBody( floor )
 
     -- Play the animation and after that determine the next step for the game
     messageScreen = display.newImageRect( mainGroup, "images/message.png", 200, 100)
@@ -161,6 +147,8 @@ local function playTapAnimation(ball)
 end
 
 local function tapBall( event )
+
+    -- Check the ball type
 
     local ball = event.target
 
@@ -189,6 +177,7 @@ local function tapBall( event )
         nrOfBalls = maxNrOfBalls
     end
 
+    -- Play the animation
     playTapAnimation(ball)
 
 end
@@ -196,34 +185,37 @@ end
 -- This function is not local, since it is used in multiple places
 function dropBalls(numberOfBalls)
 
+    -- Define the boundaries of the area (out of screen) from where the balls will be released
     local ballReleaseAreaMinX = screenLeft + ballRadius
     local ballReleaseAreaMaxX = screenLeft + screenWidth - ballRadius
     local ballReleaseAreaMinY = screenTop - ballReleaseAreaHeight + ballRadius
     local ballReleaseAreaMaxY = screenTop - ballRadius
 
-    -- Create the balls
+    -- Determine which ball is the bomb
     local bomb = math.random(1, numberOfBalls)
 
+    -- Drop the balls
     for i = numberOfBalls, 1, -1 do
-
-        -- Initiate ball Note: Ball template is needed to have a reference for deletion after all the balls are created        
+  
+        -- Create the ball and insert it to the table
         newBall = display.newSprite( ballsImageSheet, sequencesBall )
-        --newBall:scale( 300, 400 )
-        newBall:setFrame(3)
+        table.insert( ballsTable, newBall )
 
         -- Determine the ball type
         if (bomb == i) then
             newBall.name = "Bomb"
-        elseif (math.random(1, chance7Balls) == 7) then
-            newBall.name = "7Balls"
-        elseif (math.random(1, chance3Balls) == 3) then
-            newBall.name = "3Balls"
-        elseif (math.random(1, chance1Balls) == 1) then
-            newBall.name = "1Ball"
-        elseif (joker == 0 and math.random(1, chanceJoker) == 8) then -- If the player already has a Joker, no Joker balls will be created
-            newBall.name = "Joker"
-        elseif (math.random(1, chanceExtraBomb) == 3) then
-            newBall.name = "Bomb"
+        else
+            if (math.random(1, chance7Balls) == 7) then
+                newBall.name = "7Balls"
+            elseif (math.random(1, chance3Balls) == 3) then
+                newBall.name = "3Balls"
+            elseif (math.random(1, chance1Balls) == 1) then
+                newBall.name = "1Ball"
+            elseif (joker == 0 and math.random(1, chanceJoker) == 8) then -- If the player already has a Joker, no Joker balls will be created
+                newBall.name = "Joker"
+            elseif (math.random(1, chanceExtraBomb) == 3) then
+                newBall.name = "Bomb"
+            end
         end
 
         -- Make the content visible or not
@@ -240,9 +232,6 @@ function dropBalls(numberOfBalls)
         -- Add physics and listener
         physics.addBody( newBall, "dynamic", { radius=ballRadius, density=50, friction = 0.3, bounce=0.2 } )
         newBall:addEventListener( "tap", tapBall )
-
-        -- Insert the ball in to the table
-        table.insert( ballsTable, newBall )
 
     end
 
@@ -271,7 +260,8 @@ end
 local function gameLoop()
  
     -- Actions that keep continueing
-
+    -- Noop
+    
 end
  
 local function onCollision( event )
@@ -317,46 +307,7 @@ local function onCollision( event )
     end
 end
 
-
--- -----------------------------------------------------------------------------------
--- Scene event functions
--- -----------------------------------------------------------------------------------
-
--- create()
-function scene:create( event )
-
-	local sceneGroup = self.view
-	-- Code here runs when the scene is first created but has not yet appeared on screen
-
-    physics.pause()  -- Temporarily pause the physics engine
-    
-    -- Set the game difficulty
-    difficulty = event.params.difficulty
-
-	-- Set up display groups
-	backGroup = display.newGroup()  -- Display group for the background image
-	sceneGroup:insert( backGroup )  -- Insert into the scene's view group
-	
-	mainGroup = display.newGroup()  -- Display group for the balls, etc.
-	sceneGroup:insert( mainGroup )  -- Insert into the scene's view group
-	
-	uiGroup = display.newGroup()    -- Display group for UI objects like the score
-	sceneGroup:insert( uiGroup )    -- Insert into the scene's view group
-
-    -- Setup display items
-    initBackground()
-    initStatusbar()
-
-    -- Setup sound
-    explosionSound = audio.loadSound( "audio/explosion.wav" )
-	fireSound = audio.loadSound( "audio/fire.wav" )
-    musicTrack = audio.loadStream( "audio/80s-Space-Game_Looping.wav")
-
-    dropBalls(nrOfBalls)
-
-end
-
-function initBackground()
+local function initBackground()
 
     -- The background image is stretched to the actual screensize
 	local background = display.newImageRect( backGroup, "images/game_background.png", screenWidth, screenHeight )
@@ -381,7 +332,7 @@ function initBackground()
     physics.addBody( floor, "static", {bounce=0.2})
 end
 
-function initStatusbar()
+local function initStatusbar()
 
     local paddingTop = 0.07
 
@@ -422,6 +373,59 @@ function initStatusbar()
     pauseButton.x = screenLeft + (screenWidth * 0.93)
     pauseButton.y = screenTop + (screenHeight * paddingTop)
 
+end
+
+-- @DEBUG monitor Memory Usage
+local printMemUsage = function()  
+    local memUsed = (collectgarbage("count"))
+    local texUsed = system.getInfo( "textureMemoryUsed" ) / 1048576 -- Reported in Bytes
+   
+    print("\n---------MEMORY USAGE INFORMATION---------")
+    print("System Memory: ", string.format("%.00f", memUsed), "KB")
+    print("Texture Memory:", string.format("%.03f", texUsed), "MB")
+    print("------------------------------------------\n")
+end
+
+-- Only load memory monitor if running in simulator
+if (dumpMemoryDebugMode == true and system.getInfo("environment") == "simulator") then
+    Runtime:addEventListener( "enterFrame", printMemUsage)
+end
+
+-- -----------------------------------------------------------------------------------
+-- Scene event functions
+-- -----------------------------------------------------------------------------------
+
+-- create()
+function scene:create( event )
+
+	local sceneGroup = self.view
+	-- Code here runs when the scene is first created but has not yet appeared on screen
+
+    physics.pause()  -- Temporarily pause the physics engine
+    
+    -- Set the game difficulty
+    difficulty = event.params.difficulty
+
+	-- Set up display groups
+	backGroup = display.newGroup()  -- Display group for the background image
+	sceneGroup:insert( backGroup )  -- Insert into the scene's view group
+	
+	mainGroup = display.newGroup()  -- Display group for the balls, etc.
+	sceneGroup:insert( mainGroup )  -- Insert into the scene's view group
+	
+	uiGroup = display.newGroup()    -- Display group for UI objects like the score
+	sceneGroup:insert( uiGroup )    -- Insert into the scene's view group
+
+    -- Setup display items
+    initBackground()
+    initStatusbar()
+
+    -- Setup sound
+    explosionSound = audio.loadSound( "audio/explosion.wav" )
+	fireSound = audio.loadSound( "audio/fire.wav" )
+    musicTrack = audio.loadStream( "audio/80s-Space-Game_Looping.wav")
+
+    dropBalls(nrOfBalls)
 
 end
 
@@ -438,6 +442,7 @@ function scene:show( event )
 		-- Code here runs when the scene is entirely on screen
         physics.start()
         Runtime:addEventListener( "collision", onCollision )
+        gameLoopTimer = timer.performWithDelay( 500, gameLoop, 0 )
 	end
 end
 
