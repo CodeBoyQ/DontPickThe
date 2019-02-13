@@ -8,29 +8,36 @@ local scene = composer.newScene()
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
 
+-- Physics variables
 local physics = require( "physics" )
 physics.start()
-physics.setGravity( 0, 19.8 )
- 
--- Initialize variables
+physics.setGravity( 0, 70.8 )
+local bounceRate = 0.7
+local emitter
+
+-- Statusbar items
 local nrOfBalls = 15
+local nrOfBallsProgress
+local nrOfBallsProgressInit = 477
 local ballsText 
 local joker = 0
 local jokerImage
 local score = 0
 local scoreText
 
-
 local ballsTable = {}
 local gameLoopTimer
- 
--- Statusbar items
+local floor
+
+-- Messagescreen items
 local messageScreen
 
+-- UI Groups
 local backGroup
 local mainGroup
 local uiGroup
 
+-- Game settings
 local maxNrOfBalls = 25
 local difficulty
 
@@ -42,25 +49,27 @@ local chanceJoker     =  20 -- Every ball has 1 out of x chance to give you a Jo
 local chanceExtraBomb =  20 -- Every ball has 1 out of x chance to be an extra Bomb
 
 -- Debug options, set all to false for production mode
-local ballContentVisible = true
+local ballContentVisible = false
 local dumpMemoryDebugMode = false
-
--- The height of the content area where the balls are released
-local ballReleaseAreaHeight = 800
-local ballRadius = 150
 
 -- Actual device screen values (This will differ per device)
 local screenTop = display.screenOriginY
 local screenLeft = display.screenOriginX
 local screenHeight = display.actualContentHeight
 local screenWidth = display.actualContentWidth
+    
+-- The boundaries of the area (out of screen) from where the balls will be released and the radius of the balls
+local ballRadius = 150
+local ballReleaseAreaHeight = 800
+local ballReleaseAreaMinX = screenLeft + ballRadius
+local ballReleaseAreaMaxX = screenLeft + screenWidth - ballRadius
+local ballReleaseAreaMinY = screenTop - ballReleaseAreaHeight + ballRadius
+local ballReleaseAreaMaxY = screenTop - ballRadius
 
 -- Sound variable
 local explosionSound
 local fireSound
 local musicTrack
-
-local floor
 
 -- Setup Image sheet for ball
 local ballsSheetOptions =
@@ -108,6 +117,7 @@ local function updateStatubar()
     else
         jokerImage.alpha = 0.3
     end
+    transition.to( nrOfBallsProgress, { time=1000, width = nrOfBallsProgressInit * (nrOfBalls / maxNrOfBalls) })
 end
 
 local function determineGamestatus()
@@ -120,7 +130,7 @@ local function determineGamestatus()
     else
         -- Next Level
         updateStatubar()
-        physics.addBody( floor, "static", {bounce=0.2})
+        physics.addBody( floor, "static", {bounce=bounceRate})
         clearBallTable()
         dropBalls(nrOfBalls)
     end
@@ -138,7 +148,7 @@ local function playTapAnimation(ball)
     physics.removeBody( floor )
 
     -- Play the animation and after that determine the next step for the game
-    messageScreen = display.newImageRect( mainGroup, "images/message.png", 200, 100)
+    messageScreen = display.newImageRect( uiGroup, "images/message.png", 200, 100)
     messageScreen.x = display.contentCenterX
     messageScreen.y = display.contentCenterY
     
@@ -146,15 +156,25 @@ local function playTapAnimation(ball)
 
 end
 
-local function tapBall( event )
+local function explosion(tappedBall)
+  emitter.x = tappedBall.x
+  emitter.y = tappedBall.y
+  emitter:start()
+end
 
-    -- Check the ball type
+local function handleTapBallEvent( event )
+
+    -- Check the tapped ball type
 
     local ball = event.target
+
+    explosion (ball)
 
     if (ball.name == "Bomb") then
         -- Player looses a life
         joker = joker - 1
+        -- Play explotionsound
+        audio.play( explosionSound )
     elseif (ball.name == "7Balls") then
         -- Player gets 7 extra balls and goes to the next level
         nrOfBalls = nrOfBalls + 7
@@ -177,6 +197,9 @@ local function tapBall( event )
         nrOfBalls = maxNrOfBalls
     end
 
+    -- Update score
+    score = score + nrOfBalls
+
     -- Play the animation
     playTapAnimation(ball)
 
@@ -185,12 +208,6 @@ end
 -- This function is not local, since it is used in multiple places
 function dropBalls(numberOfBalls)
 
-    -- Define the boundaries of the area (out of screen) from where the balls will be released
-    local ballReleaseAreaMinX = screenLeft + ballRadius
-    local ballReleaseAreaMaxX = screenLeft + screenWidth - ballRadius
-    local ballReleaseAreaMinY = screenTop - ballReleaseAreaHeight + ballRadius
-    local ballReleaseAreaMaxY = screenTop - ballRadius
-
     -- Determine which ball is the bomb
     local bomb = math.random(1, numberOfBalls)
 
@@ -198,7 +215,7 @@ function dropBalls(numberOfBalls)
     for i = numberOfBalls, 1, -1 do
   
         -- Create the ball and insert it to the table
-        newBall = display.newSprite( ballsImageSheet, sequencesBall )
+        newBall = display.newSprite( mainGroup, ballsImageSheet, sequencesBall )
         table.insert( ballsTable, newBall )
 
         -- Determine the ball type
@@ -230,8 +247,8 @@ function dropBalls(numberOfBalls)
         newBall.y = math.random (ballReleaseAreaMinY, ballReleaseAreaMaxY)
 
         -- Add physics and listener
-        physics.addBody( newBall, "dynamic", { radius=ballRadius, density=50, friction = 0.3, bounce=0.2 } )
-        newBall:addEventListener( "tap", tapBall )
+        physics.addBody( newBall, "dynamic", { radius=ballRadius, density=50, friction = 0.3, bounce=bounceRate } )
+        newBall:addEventListener( "tap", handleTapBallEvent )
 
     end
 
@@ -307,7 +324,43 @@ local function onCollision( event )
     end
 end
 
-local function initBackground()
+local function  setupExplosion()
+    local dx = 200
+    local p = "images/habra.png"
+    local emitterParams = {
+          startParticleSizeVariance = dx/2,
+          startColorAlpha = 0.61,
+          startColorGreen = 0.3031555,
+          startColorRed = 0.08373094,
+          yCoordFlipped = 0,
+          blendFuncSource = 770,
+          blendFuncDestination = 1,
+          rotatePerSecondVariance = 153.95,
+          particleLifespan = 0.7237,
+          tangentialAcceleration = -144.74,
+          startParticleSize = dx,
+          textureFileName = p,
+          startColorVarianceAlpha = 1,
+          maxParticles = 128,
+          finishParticleSize = dx/3,
+          duration = 0.75,
+          finishColorRed = 0.078,
+          finishColorAlpha = 0.75,
+          finishColorBlue = 0.3699196,
+          finishColorGreen = 0.5443883,
+          maxRadiusVariance = 172.63,
+          finishParticleSizeVariance = dx/2,
+          gravityy = 220.0,
+          speedVariance = 258.79,
+          tangentialAccelVariance = -92.11,
+          angleVariance = -300.0,
+          angle = -900.11
+    }
+    emitter = display.newEmitter(emitterParams )
+    emitter:stop()
+end
+
+local function setupBackground()
 
     -- The background image is stretched to the actual screensize
 	local background = display.newImageRect( backGroup, "images/game_background.png", screenWidth, screenHeight )
@@ -329,10 +382,10 @@ local function initBackground()
     floor = display.newImageRect( backGroup, "images/wall.png", display.actualContentWidth, 100 )
     floor.x = display.contentCenterX
     floor.y = screenTop + screenHeight + 50
-    physics.addBody( floor, "static", {bounce=0.2})
+    physics.addBody( floor, "static", {bounce=bounceRate})
 end
 
-local function initStatusbar()
+local function setupStatusbar()
 
     local paddingTop = 0.07
 
@@ -342,7 +395,7 @@ local function initStatusbar()
     nrOfBallsBackground.x = screenLeft + (screenWidth * 0.1)
     nrOfBallsBackground.y = screenTop + (screenHeight * paddingTop)
 
-    local nrOfBallsProgress = display.newImageRect( uiGroup, "images/game_nrballs_progress.png", 477, 142 )
+    nrOfBallsProgress = display.newImageRect( uiGroup, "images/game_nrballs_progress.png", nrOfBallsProgressInit * (nrOfBalls / maxNrOfBalls), 142 )
     nrOfBallsProgress.anchorX = 0
     nrOfBallsProgress.x = screenLeft + (screenWidth * 0.1) - 26
     nrOfBallsProgress.y = screenTop + (screenHeight * paddingTop)
@@ -417,10 +470,11 @@ function scene:create( event )
 	sceneGroup:insert( uiGroup )    -- Insert into the scene's view group
 
     -- Setup display items
-    initBackground()
-    initStatusbar()
+    setupBackground()
+    setupStatusbar()
+    setupExplosion()
 
-    -- Setup sound
+    -- Setup sounds
     explosionSound = audio.loadSound( "audio/explosion.wav" )
 	fireSound = audio.loadSound( "audio/fire.wav" )
     musicTrack = audio.loadStream( "audio/80s-Space-Game_Looping.wav")
