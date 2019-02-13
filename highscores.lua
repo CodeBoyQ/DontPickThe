@@ -3,6 +3,12 @@ local composer = require( "composer" )
 
 local scene = composer.newScene()
 
+-- Actual device screen values (This will differ per device)
+local screenTop = display.screenOriginY
+local screenLeft = display.screenOriginX
+local screenHeight = display.actualContentHeight
+local screenWidth = display.actualContentWidth
+
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
@@ -45,7 +51,8 @@ local function saveScores()
 end
 
 local function gotoMenu()
-    composer.gotoScene( "menu", { time=800, effect="crossFade" } )
+	local options = { effect = "slideLeft", time = 500 }
+    composer.gotoScene( "menu" , options)
 end
 
 -- -----------------------------------------------------------------------------------
@@ -74,9 +81,15 @@ function scene:create( event )
 	-- Save the scores
 	saveScores()
 
-	local background = display.newImageRect( sceneGroup, "background.png", 800, 1400 )
+	local background = display.newImageRect( sceneGroup, "images/highscores_background.png", screenWidth, screenHeight )
     background.x = display.contentCenterX
-    background.y = display.contentCenterY
+	background.y = display.contentCenterY
+
+	local buttonBack = display.newImageRect( sceneGroup, "images/back_button.png", 260, 144)
+	buttonBack.x = display.contentCenterX
+	buttonBack.y = screenTop + (screenHeight * 0.92)
+	
+	buttonBack:addEventListener( "tap", gotoMenu )
      
     local highScoresHeader = display.newText( sceneGroup, "High Scores", display.contentCenterX, 100, native.systemFont, 44 )
 

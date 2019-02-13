@@ -15,13 +15,14 @@ physics.setGravity( 0, 19.8 )
 -- Initialize variables
 local joker = 0
 local score = 0
- 
-local ballsTable = {}
- 
-local gameLoopTimer
-local jokerText
+local jokerImage
 local scoreText
-local ballsText
+local ballsText 
+
+local ballsTable = {}
+local gameLoopTimer
+ 
+-- Statusbar items
 local messageScreen
 
 local backGroup
@@ -29,12 +30,14 @@ local mainGroup
 local uiGroup
 
 local nrOfBalls = 15
+local maxNrOfBalls = 25
+local difficulty
 
 -- Probability system (order small to large chance) minimum is 10
 local chance7Balls    = 100 -- Every ball has 1 out of x chance to give you 7 extra balls
 local chance3Balls    =  30 -- Every ball has 1 out of x chance to give you 3 extra balls
 local chance1Balls    =  10 -- Every ball has 1 out of x chance to give you 1 extra balls
-local chanceJoker     =  50 -- Every ball has 1 out of x chance to give you a Joker
+local chanceJoker     =  50 -- Every ball has 1 out of x chance to give you a Joker. If the user already has a joker this chance = 0
 local chanceExtraBomb =  30 -- Every ball has 1 out of x chance to be an extra Bomb
 
 -- Debug options
@@ -83,10 +86,33 @@ local ball7Frame = 4
 local jokerFrame = 5
 local bombFrame = 6
 
-local function updateText()
+
+-- @DEBUG monitor Memory Usage
+local printMemUsage = function()  
+    local memUsed = (collectgarbage("count"))
+    local texUsed = system.getInfo( "textureMemoryUsed" ) / 1048576 -- Reported in Bytes
+   
+    print("\n---------MEMORY USAGE INFORMATION---------")
+    print("System Memory: ", string.format("%.00f", memUsed), "KB")
+    print("Texture Memory:", string.format("%.03f", texUsed), "MB")
+    print("------------------------------------------\n")
+end
+
+-- Only load memory monitor if running in simulator
+if (system.getInfo("environment") == "simulator") then
+    -- Uncomment the code below to show memory usage
+	--Runtime:addEventListener( "enterFrame", printMemUsage)
+end
+
+local function updateStatubar()
     ballsText.text = "Balls: " .. nrOfBalls
     jokerText.text = "Joker: " .. joker
     scoreText.text = "Score: " .. score
+    if (joker == 1) then
+        jokerImage.alpha = 0.3
+    else
+        jokerImage.alpha = 1
+    end
 end
 
 local function clearBallTable()
@@ -109,7 +135,7 @@ local function determineGamestatus()
         -- Ultimate Winner
     else
         -- Next Level
-        updateText()
+        updateStatubar()
         physics.addBody( floor, "static", {bounce=0.2})
         clearBallTable()
         initialiseBalls(nrOfBalls)
@@ -159,12 +185,16 @@ local function tapBall( event )
         nrOfBalls = nrOfBalls - 1
     end
 
+    if (nrOfBalls > maxNrOfBalls) then
+        nrOfBalls = maxNrOfBalls
+    end
+
     playTapAnimation(ball)
 
 end
 
 -- This function is not local, since it is used in multiple places
-function initialiseBalls(numberOfBalls)
+function dropBalls(numberOfBalls)
 
     local ballReleaseAreaMinX = screenLeft + ballRadius
     local ballReleaseAreaMaxX = screenLeft + screenWidth - ballRadius
@@ -190,7 +220,7 @@ function initialiseBalls(numberOfBalls)
             newBall.name = "3Balls"
         elseif (math.random(1, chance1Balls) == 1) then
             newBall.name = "1Ball"
-        elseif (math.random(1, chanceJoker) == 8) then
+        elseif (joker == 0 and math.random(1, chanceJoker) == 8) then -- If the player already has a Joker, no Joker balls will be created
             newBall.name = "Joker"
         elseif (math.random(1, chanceExtraBomb) == 3) then
             newBall.name = "Bomb"
@@ -298,7 +328,10 @@ function scene:create( event )
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
-	physics.pause()  -- Temporarily pause the physics engine
+    physics.pause()  -- Temporarily pause the physics engine
+    
+    -- Set the game difficulty
+    difficulty = event.params.difficulty
 
 	-- Set up display groups
 	backGroup = display.newGroup()  -- Display group for the background image
@@ -310,12 +343,27 @@ function scene:create( event )
 	uiGroup = display.newGroup()    -- Display group for UI objects like the score
 	sceneGroup:insert( uiGroup )    -- Insert into the scene's view group
 
-    -- Load the background and walls
-    -- The walls are postioned to the left, bottom and right of the actual device screen
-	local background = display.newImageRect( backGroup, "images/background.png", screenWidth, screenHeight )
+    -- Setup display items
+    initBackground()
+    initStatusbar()
+
+    -- Setup sound
+    explosionSound = audio.loadSound( "audio/explosion.wav" )
+	fireSound = audio.loadSound( "audio/fire.wav" )
+    musicTrack = audio.loadStream( "audio/80s-Space-Game_Looping.wav")
+
+    dropBalls(nrOfBalls)
+
+end
+
+function initBackground()
+
+    -- The background image is stretched to the actual screensize
+	local background = display.newImageRect( backGroup, "images/game_background.png", screenWidth, screenHeight )
 	background.x = display.contentCenterX
     background.y = display.contentCenterY
 
+    -- The walls are postioned to the left, bottom and right of the actual device screen
     local leftWall = display.newImageRect( backGroup, "images/wall.png", 100, screenHeight + ballReleaseAreaHeight ) -- The ballReleaseAreaHeight area is where the balls are created to fall in to the screen
     leftWall.x = screenLeft - 50
     leftWall.y = display.contentCenterY - (ballReleaseAreaHeight/2)
@@ -326,25 +374,56 @@ function scene:create( event )
     rightWall.y = display.contentCenterY - (ballReleaseAreaHeight/2)
     physics.addBody( rightWall, "static")
     
+    -- Floor is a global variable since it will be used on multiple places (e.g. )
     floor = display.newImageRect( backGroup, "images/wall.png", display.actualContentWidth, 100 )
     floor.x = display.contentCenterX
     floor.y = screenTop + screenHeight + 50
     physics.addBody( floor, "static", {bounce=0.2})
-
-	-- Display information
-    ballsText = display.newText( uiGroup, "Balls: " .. nrOfBalls, screenLeft + (screenWidth * 0.2), screenTop + (screenHeight * 0.1), native.systemFont, 36 ) 
-    jokerText = display.newText( uiGroup, "Joker: " .. joker, screenLeft + (screenWidth * 0.5), screenTop + (screenHeight * 0.1), native.systemFont, 36 )
-    scoreText = display.newText( uiGroup, "Score: " .. score, screenLeft + (screenWidth * 0.8), screenTop + (screenHeight * 0.1), native.systemFont, 36 )
-
-    explosionSound = audio.loadSound( "audio/explosion.wav" )
-	fireSound = audio.loadSound( "audio/fire.wav" )
-	
-    musicTrack = audio.loadStream( "audio/80s-Space-Game_Looping.wav")
-
-    initialiseBalls(nrOfBalls)
-
 end
 
+function initStatusbar()
+
+    local paddingTop = 0.07
+
+    -- The Nr of balls bar
+    local nrOfBallsBackground = display.newImageRect( uiGroup, "images/game_nrballs_background.png", 427, 90 )
+    nrOfBallsBackground.anchorX = 0
+    nrOfBallsBackground.x = screenLeft + (screenWidth * 0.1)
+    nrOfBallsBackground.y = screenTop + (screenHeight * paddingTop)
+
+    local nrOfBallsProgress = display.newImageRect( uiGroup, "images/game_nrballs_progress.png", 477, 142 )
+    nrOfBallsProgress.anchorX = 0
+    nrOfBallsProgress.x = screenLeft + (screenWidth * 0.1) - 26
+    nrOfBallsProgress.y = screenTop + (screenHeight * paddingTop)
+
+    local nrOfBallsBall = display.newImageRect( uiGroup, "images/game_nrballs_ball.png", 155, 155 )
+    nrOfBallsBall.x = screenLeft + (screenWidth * 0.1)
+    nrOfBallsBall.y = screenTop + (screenHeight * paddingTop)
+
+    ballsText = display.newText( uiGroup, nrOfBalls, screenLeft + (screenWidth * 0.1), screenTop + (screenHeight * paddingTop), native.systemFont, 70 ) 
+    ballsText:setFillColor( 0.65,  0.49, 0.918 )
+
+    -- The Joker
+    jokerImage = display.newImageRect( uiGroup, "images/game_joker.png", 106, 145 )
+    jokerImage.x = screenLeft + (screenWidth * 0.47)
+    jokerImage.y = screenTop + (screenHeight * paddingTop)
+    jokerImage.alpha = 0.3
+
+    -- Score bar
+    local scoreBackground = display.newImageRect( uiGroup, "images/game_score_background.png", 534, 142 )
+    scoreBackground.anchorX = 0
+    scoreBackground.x = screenLeft + (screenWidth * 0.51)
+    scoreBackground.y = screenTop + (screenHeight * paddingTop)
+    scoreText = display.newText( uiGroup, score, screenLeft + (screenWidth * 0.84), scoreBackground.y, native.systemFont, 50 )
+    scoreText.anchorX = scoreText.width
+
+    -- Pause button
+    local pauseButton = display.newImageRect( uiGroup, "images/game_button_pause.png", 105, 126 )
+    pauseButton.x = screenLeft + (screenWidth * 0.93)
+    pauseButton.y = screenTop + (screenHeight * paddingTop)
+
+
+end
 
 -- show()
 function scene:show( event )
@@ -357,7 +436,7 @@ function scene:show( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs when the scene is entirely on screen
-		physics.start()
+        physics.start()
         Runtime:addEventListener( "collision", onCollision )
 	end
 end

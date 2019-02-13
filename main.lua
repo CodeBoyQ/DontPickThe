@@ -22,5 +22,5 @@ audio.reserveChannels( 1 )
 audio.setVolume( 0.3, { channel=1 } )
 
 -- Go to the menu screen
-composer.gotoScene( "game" )
--- Temporary to menu
+--composer.gotoScene( "game" )
+composer.gotoScene( "game", { params = { difficulty = "Normal"} } )
