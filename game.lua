@@ -29,8 +29,8 @@ local ballsTable = {}
 local gameLoopTimer
 local floor
 
--- Messagescreen items
-local messageScreen
+-- Message items
+local messageBackground
 
 -- UI Groups
 local backGroup
@@ -49,7 +49,7 @@ local chanceJoker     =  20 -- Every ball has 1 out of x chance to give you a Jo
 local chanceExtraBomb =  20 -- Every ball has 1 out of x chance to be an extra Bomb
 
 -- Debug options, set all to false for production mode
-local ballContentVisible = false
+local ballContentVisible = true
 local dumpMemoryDebugMode = false
 
 -- Actual device screen values (This will differ per device)
@@ -66,10 +66,12 @@ local ballReleaseAreaMaxX = screenLeft + screenWidth - ballRadius
 local ballReleaseAreaMinY = screenTop - ballReleaseAreaHeight + ballRadius
 local ballReleaseAreaMaxY = screenTop - ballRadius
 
--- Sound variable
+-- Sound variables
 local explosionSound
 local fireSound
-local musicTrack
+local musicTrackGame
+local ballBallBounceSound
+local ballWallBounceSound
 
 -- Setup Image sheet for ball
 local ballsSheetOptions =
@@ -136,26 +138,6 @@ local function determineGamestatus()
     end
 end
 
-local function playTapAnimation(ball)
-
-    -- Show the content of all the balls
-    for i = #ballsTable, 1, -1 do
-        local thisBall = ballsTable[i]
-        showBallContent(thisBall)
-    end
-
-    -- Let the balls fall through the ground
-    physics.removeBody( floor )
-
-    -- Play the animation and after that determine the next step for the game
-    messageScreen = display.newImageRect( uiGroup, "images/message.png", 200, 100)
-    messageScreen.x = display.contentCenterX
-    messageScreen.y = display.contentCenterY
-    
-    transition.to( messageScreen, { time=3000, alpha=0, width=1600, height=800, onComplete=determineGamestatus })
-
-end
-
 local function explosion(tappedBall)
   emitter.x = tappedBall.x
   emitter.y = tappedBall.y
@@ -168,31 +150,52 @@ local function handleTapBallEvent( event )
 
     local ball = event.target
 
+    transition.to( ball, { time=1000, alpha=0, transition=easing.inOutBounce} )
+
+    local message
+    local messageType = "Good" -- Good or Bad
+    local messageSize = 100
+
+    -- Play explotion particle
     explosion (ball)
 
     if (ball.name == "Bomb") then
         -- Player looses a life
         joker = joker - 1
+        message = "Negative Energy!!!"
+        if (joker == 0) then
+            message = message .. "\nLuckily you had a negative \n energy conductor :-)"
+            messageSize =70
+        else
+            messageType = "Bad"
+        end 
         -- Play explotionsound
         audio.play( explosionSound )
     elseif (ball.name == "7Balls") then
         -- Player gets 7 extra balls and goes to the next level
         nrOfBalls = nrOfBalls + 7
+        message = "Good energy!! :-) \n+7!"
     elseif (ball.name == "3Balls") then
         -- Player gets 3 extra balls and goes to the next level
         nrOfBalls = nrOfBalls + 3
+        message = "Good energy!! \n+3!"
     elseif (ball.name == "1Balls") then
         -- Player gets 1 extra balls and goes to the next level
         nrOfBalls = nrOfBalls + 1
+        message = "Good energy!! \n+1!"
     elseif (ball.name == "Joker") then
         -- Player gets 1 extra life
         joker = 1
         nrOfBalls = nrOfBalls - 1
+        message = "You found a \nNegative energy \nconductor!"
+        messageSize = 70
     else
         -- Normal
         nrOfBalls = nrOfBalls - 1
+        message = "You have \n chosen wisely!"
     end
 
+    -- There can only be a maximum of [maxNrOfBalls] in the game
     if (nrOfBalls > maxNrOfBalls) then
         nrOfBalls = maxNrOfBalls
     end
@@ -200,8 +203,39 @@ local function handleTapBallEvent( event )
     -- Update score
     score = score + nrOfBalls
 
-    -- Play the animation
-    playTapAnimation(ball)
+    -- Show the content of all the balls
+    for i = #ballsTable, 1, -1 do
+        local thisBall = ballsTable[i]
+        showBallContent(thisBall)
+    end
+
+    -- Let the balls fall through the ground
+    physics.removeBody( floor )
+
+    -- Show the message
+    messageBackground = display.newImageRect( uiGroup, "images/game_message_bg.png", 500, 350) --1199 x 795
+    messageBackground.x = display.contentCenterX
+    messageBackground.y = display.contentCenterY
+    transition.to( messageBackground, { time=1000, alpha=0, width = 10052, height = 715, transition=easing.outCirc} )
+   
+    local options = 
+    {
+        text = message,     
+        x = display.contentCenterX,
+        y = display.contentCenterY,
+        --width = 1280,
+        font = native.systemFont,   
+        fontSize = messageSize,
+        align = "center"  -- Alignment parameter
+    }
+    messageText = display.newText( options )
+
+    if (messageType=="Bad") then
+        messageText:setFillColor( 0,  0, 0 )
+    end
+ 
+    transition.to( messageText, { time=3000, delay = 0, alpha=0, xScale=3, yScale=3, onComplete=determineGamestatus })
+
 
 end
 
@@ -287,39 +321,13 @@ local function onCollision( event )
  
         local obj1 = event.object1
         local obj2 = event.object2
- 
-        if ( ( obj1.myName == "laser" and obj2.myName == "asteroid" ) or
-             ( obj1.myName == "asteroid" and obj2.myName == "laser" ) )
-        then
-            -- Remove both the laser and asteroid
-            display.remove( obj1 )
-			display.remove( obj2 )
-			
-			-- Play explosion sound!
-			audio.play( explosionSound )
- 
-            for i = #ballsTable, 1, -1 do
-                if ( ballsTable[i] == obj1 or ballsTable[i] == obj2 ) then
-                    table.remove( ballsTable, i )
-                    break
-                end
-            end
- 
-            -- Increase score
-            score = score + 100
-            scoreText.text = "Score: " .. score
- 
-        elseif ( ( obj1.myName == "ship" and obj2.myName == "asteroid" ) or
-                 ( obj1.myName == "asteroid" and obj2.myName == "ship" ) )
-        then
-            if ( died == false ) then
-				died = true
-				
-				-- Play explosion sound!
-				audio.play( explosionSound )
- 
-            end
-        else
+
+        if ( obj1.name == "wall" or obj2.name == "wall" ) then
+            -- Ball hits wall
+            -- audio.play( ballBallBounceSound)
+        elseif ( obj1.name ~= "wall" and obj2.name ~= "wall" ) then
+            -- Ball to ball collision
+			--audio.play( ballBallBounceSound )
         end
     end
 end
@@ -360,6 +368,14 @@ local function  setupExplosion()
     emitter:stop()
 end
 
+local function setupSounds()
+    explosionSound = audio.loadSound( "audio/explosion.wav" )
+    fireSound = audio.loadSound( "audio/fire.wav" )
+    ballBallBounceSound = audio.loadSound ("audio/ball_ball_bounce.wav")
+    ballWallBounceSound = audio.loadSound ("audio/ball_wall_bounce.wav")
+    musicTrackGame = audio.loadStream( "audio/gameLoop.wav")
+end
+
 local function setupBackground()
 
     -- The background image is stretched to the actual screensize
@@ -371,17 +387,20 @@ local function setupBackground()
     local leftWall = display.newImageRect( backGroup, "images/wall.png", 100, screenHeight + ballReleaseAreaHeight ) -- The ballReleaseAreaHeight area is where the balls are created to fall in to the screen
     leftWall.x = screenLeft - 50
     leftWall.y = display.contentCenterY - (ballReleaseAreaHeight/2)
+    leftWall.name = "wall"
     physics.addBody( leftWall, "static")
 
     local rightWall = display.newImageRect( backGroup, "images/wall.png", 100, screenHeight + ballReleaseAreaHeight) -- The ballReleaseAreaHeight area is where the balls are created to fall in to the screen
     rightWall.x = screenLeft + screenWidth + 50
     rightWall.y = display.contentCenterY - (ballReleaseAreaHeight/2)
+    rightWall.name = "wall"
     physics.addBody( rightWall, "static")
     
     -- Floor is a global variable since it will be used on multiple places (e.g. )
     floor = display.newImageRect( backGroup, "images/wall.png", display.actualContentWidth, 100 )
     floor.x = display.contentCenterX
     floor.y = screenTop + screenHeight + 50
+    floor.name = "wall"
     physics.addBody( floor, "static", {bounce=bounceRate})
 end
 
@@ -409,16 +428,16 @@ local function setupStatusbar()
 
     -- The Joker
     jokerImage = display.newImageRect( uiGroup, "images/game_joker.png", 106, 145 )
-    jokerImage.x = screenLeft + (screenWidth * 0.47)
+    jokerImage.x = screenLeft + (screenWidth * 0.50)
     jokerImage.y = screenTop + (screenHeight * paddingTop)
     jokerImage.alpha = 0.3
 
     -- Score bar
-    local scoreBackground = display.newImageRect( uiGroup, "images/game_score_background.png", 534, 142 )
+    local scoreBackground = display.newImageRect( uiGroup, "images/game_score_background.png", 410, 142 )
     scoreBackground.anchorX = 0
-    scoreBackground.x = screenLeft + (screenWidth * 0.51)
+    scoreBackground.x = screenLeft + (screenWidth * 0.55)
     scoreBackground.y = screenTop + (screenHeight * paddingTop)
-    scoreText = display.newText( uiGroup, score, screenLeft + (screenWidth * 0.84), scoreBackground.y, native.systemFont, 50 )
+    scoreText = display.newText( uiGroup, score, screenLeft + (screenWidth * 0.83), scoreBackground.y, native.systemFont, 50 )
     scoreText.anchorX = scoreText.width
 
     -- Pause button
@@ -475,9 +494,7 @@ function scene:create( event )
     setupExplosion()
 
     -- Setup sounds
-    explosionSound = audio.loadSound( "audio/explosion.wav" )
-	fireSound = audio.loadSound( "audio/fire.wav" )
-    musicTrack = audio.loadStream( "audio/80s-Space-Game_Looping.wav")
+    setupSounds()
 
     dropBalls(nrOfBalls)
 
@@ -497,6 +514,10 @@ function scene:show( event )
         physics.start()
         Runtime:addEventListener( "collision", onCollision )
         gameLoopTimer = timer.performWithDelay( 500, gameLoop, 0 )
+
+        -- Start the music!
+        audio.fadeOut(1)
+		--audio.play( musicTrackGame, { channel = 2, loops = -1 } )
 	end
 end
 
@@ -532,7 +553,7 @@ function scene:destroy( event )
 	-- Dispose audio!
 	audio.dispose( explosionSound )
 	audio.dispose( fireSound )
-    audio.dispose( musicTrack )
+    audio.dispose( musicTrackGame )
     
     -- Dispose of all the balls in the table
     clearBallTable()

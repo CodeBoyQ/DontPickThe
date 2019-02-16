@@ -12,6 +12,10 @@ local screenWidth = display.actualContentWidth
 -- Game difficulty
 local difficulty = "Normal"
 
+-- Sound variables
+local backgroundTrack
+local backgroundTrackChorus
+
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
@@ -48,6 +52,16 @@ local function setDifficulty()
 	end
 end
 
+-- Thes functions had to be global, since they call each other
+function loopTrack()
+	print("loopTrack")
+	audio.play( backgroundTrack, { channel = 1, loops = 1, onComplete=loopChorusTrack } )
+end
+
+function loopChorusTrack()
+	print("loopChorusTrack")
+	audio.play( backgroundTrackChorus, { channel = 1, loops = 1, onComplete=loopTrack } )
+end
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
 -- -----------------------------------------------------------------------------------
@@ -106,6 +120,9 @@ function scene:create( event )
 	buttonTutorial:addEventListener( "tap", gotoTutorial )
 	buttonHighscores:addEventListener( "tap", gotoHighScores )
 
+	-- Setup Audio
+	backgroundTrack = audio.loadStream( "audio/menuLoopA.wav")
+	backgroundTrackChorus = audio.loadStream( "audio/menuLoopAChorus.wav")
 
 end
 
@@ -124,6 +141,9 @@ function scene:show( event )
 	elseif ( phase == "did" ) then
 		-- Code here runs when the scene is entirely on screen
 
+		-- Start the music!
+		loopTrack()
+
 	end
 end
 
@@ -140,6 +160,9 @@ function scene:hide( event )
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
 
+		-- Music is not stopped, because you have to be able to switch between tutorials en highscores
+		-- audio.stop( 1 )
+
 	end
 end
 
@@ -149,6 +172,9 @@ function scene:destroy( event )
 
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view
+
+	-- Dispose audio!
+	audio.dispose( backgroundTrack )
 
 end
 
