@@ -49,7 +49,7 @@ local chanceJoker     =  20 -- Every ball has 1 out of x chance to give you a Jo
 local chanceExtraBomb =  20 -- Every ball has 1 out of x chance to be an extra Bomb
 
 -- Debug options, set all to false for production mode
-local ballContentVisible = true
+local ballContentVisible = false
 local dumpMemoryDebugMode = false
 
 -- Actual device screen values (This will differ per device)
@@ -187,7 +187,7 @@ local function handleTapBallEvent( event )
         -- Player gets 1 extra life
         joker = 1
         nrOfBalls = nrOfBalls - 1
-        message = "You found a \nNegative energy \nconductor!"
+        message = "You found a \nNegative energy \nblocker!"
         messageSize = 70
     else
         -- Normal
@@ -517,7 +517,7 @@ function scene:show( event )
 
         -- Start the music!
         audio.fadeOut(1)
-		--audio.play( musicTrackGame, { channel = 2, loops = -1 } )
+		audio.play( musicTrackGame, { channel = 2, loops = -1 } )
 	end
 end
 

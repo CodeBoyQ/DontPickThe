@@ -121,8 +121,8 @@ function scene:create( event )
 	buttonHighscores:addEventListener( "tap", gotoHighScores )
 
 	-- Setup Audio
-	backgroundTrack = audio.loadStream( "audio/menuLoopA.wav")
-	backgroundTrackChorus = audio.loadStream( "audio/menuLoopAChorus.wav")
+	backgroundTrack = audio.loadStream( "audio/menuLoop.wav")
+	backgroundTrackChorus = audio.loadStream( "audio/menuLoopChorus.wav")
 
 end
 
