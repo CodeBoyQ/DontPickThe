@@ -40,6 +40,8 @@ local uiGroup
 -- Game settings
 local maxNrOfBalls = 25
 local difficulty
+local musicOn
+local fxOn
 
 -- Probability system (order small to large chance) minimum is 10
 local chance7Balls    = 50 -- Every ball has 1 out of x chance to give you 7 extra balls
@@ -49,7 +51,7 @@ local chanceJoker     =  20 -- Every ball has 1 out of x chance to give you a Jo
 local chanceExtraBomb =  20 -- Every ball has 1 out of x chance to be an extra Bomb
 
 -- Debug options, set all to false for production mode
-local ballContentVisible = false
+local ballContentVisible = true
 local dumpMemoryDebugMode = false
 
 -- Actual device screen values (This will differ per device)
@@ -68,7 +70,6 @@ local ballReleaseAreaMaxY = screenTop - ballRadius
 
 -- Sound variables
 local explosionSound
-local fireSound
 local musicTrackGame
 local ballBallBounceSound
 local ballWallBounceSound
@@ -164,13 +165,15 @@ local function handleTapBallEvent( event )
         joker = joker - 1
         message = "Negative Energy!!!"
         if (joker == 0) then
-            message = message .. "\nLuckily you had a negative \n energy conductor :-)"
+            message = message .. "\nLuckily you had a negative \n energy blocker :-)"
             messageSize =70
         else
             messageType = "Bad"
         end 
-        -- Play explotionsound
-        audio.play( explosionSound )
+        -- Play explosionsound
+        if (fxOn) then
+            audio.play( explosionSound )
+        end
     elseif (ball.name == "7Balls") then
         -- Player gets 7 extra balls and goes to the next level
         nrOfBalls = nrOfBalls + 7
@@ -197,7 +200,10 @@ local function handleTapBallEvent( event )
 
     -- There can only be a maximum of [maxNrOfBalls] in the game
     if (nrOfBalls > maxNrOfBalls) then
+        local overflowBonus = (nrOfBalls - maxNrOfBalls) * 100
         nrOfBalls = maxNrOfBalls
+        score = score + overflowBonus -- You get bonus points for the balls that you've lost because they exceed
+        message = message .. "\n Overflow Bonus!! " .. overflowBonus
     end
 
     -- Update score
@@ -370,10 +376,16 @@ end
 
 local function setupSounds()
     explosionSound = audio.loadSound( "audio/explosion.wav" )
-    fireSound = audio.loadSound( "audio/fire.wav" )
     ballBallBounceSound = audio.loadSound ("audio/ball_ball_bounce.wav")
     ballWallBounceSound = audio.loadSound ("audio/ball_wall_bounce.wav")
     musicTrackGame = audio.loadStream( "audio/gameLoop.wav")
+end
+
+local function disposeSounds()
+    audio.dispose( explosionSound )
+    audio.dispose( musicTrackGame )
+    audio.dispose( ballBallBounceSound )
+    audio.dispose( ballWallBounceSound )
 end
 
 local function setupBackground()
@@ -475,8 +487,10 @@ function scene:create( event )
 
     physics.pause()  -- Temporarily pause the physics engine
     
-    -- Set the game difficulty
+    -- Set the game settings
     difficulty = event.params.difficulty
+    musicOn = event.params.musicOn
+    fxOn = event.params.fxOn
 
 	-- Set up display groups
 	backGroup = display.newGroup()  -- Display group for the background image
@@ -516,8 +530,11 @@ function scene:show( event )
         gameLoopTimer = timer.performWithDelay( 500, gameLoop, 0 )
 
         -- Start the music!
-        audio.fadeOut(1)
-		audio.play( musicTrackGame, { channel = 2, loops = -1 } )
+        if (musicOn) then
+            audio.fadeOut(1)
+            audio.play( musicTrackGame, { channel = 2, loops = -1 } )
+        end
+		
 	end
 end
 
@@ -550,10 +567,8 @@ function scene:destroy( event )
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view
 
-	-- Dispose audio!
-	audio.dispose( explosionSound )
-	audio.dispose( fireSound )
-    audio.dispose( musicTrackGame )
+    -- Dispose audio!
+    disposeSounds()
     
     -- Dispose of all the balls in the table
     clearBallTable()
