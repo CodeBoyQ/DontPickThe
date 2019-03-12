@@ -1,5 +1,6 @@
+
 local composer = require( "composer" )
-local globalData = require( "globalData" )
+
 local scene = composer.newScene()
 
 -- Actual device screen values (This will differ per device)
@@ -7,6 +8,11 @@ local screenTop = display.screenOriginY
 local screenLeft = display.screenOriginX
 local screenHeight = display.actualContentHeight
 local screenWidth = display.actualContentWidth
+
+-- Global game settings
+local difficulty = "Normal"
+local musicOn = true
+local fxOn = true 
 
 -- Sound variables
 local backgroundTrack
@@ -18,7 +24,7 @@ local backgroundTrackChorus
 -- -----------------------------------------------------------------------------------
 
 local function gotoGame()
-	local options = { effect = "slideUp", time = 500}
+	local options = { effect = "slideUp", time = 500, params = { difficulty = difficulty, musicOn = musicOn, fxOn = fxOn} }
     composer.gotoScene( "game" , options)
 end
  
@@ -33,41 +39,40 @@ local options = { effect = "slideRight", time = 500 }
 end
 
 local function setDifficulty() 
-	local currenDifficulty = globalData.difficulty
-	if (currenDifficulty== "Easy") then
-		globalData.difficulty = "Normal"
+	if (difficulty == "Easy") then
+		difficulty = "Normal"
 		levelNormal.isVisible = true
 		levelEasy.isVisible = false
-	elseif (currenDifficulty == "Normal") then
-		globalData.difficulty = "Hard"
+	elseif (difficulty == "Normal") then
+		difficulty = "Hard"
 		levelHard.isVisible = true
 		levelNormal.isVisible = false
-	elseif (currenDifficulty == "Hard") then
-		globalData.difficulty = "Easy"
+	elseif (difficulty == "Hard") then
+		difficulty = "Easy"
 		levelEasy.isVisible = true
 		levelHard.isVisible = false
 	end
 end
 
 local function toggleMusic(event)
-	if (globalData.musicOn == true) then
+	if (musicOn == true) then
 		event.target.alpha = 0.3
 		audio.setVolume( 0, { channel = 1 } )
-		globalData.musicOn = false
+		musicOn = false
 	else
 		event.target.alpha = 1
 		audio.setVolume( 0.3, { channel = 1 } )
-		globalData.musicOn = true
+		musicOn = true
 	end
 end
 
 local function toggleFx(event)
-	if (globalData.fxOn == true) then
+	if (fxOn == true) then
 		event.target.alpha = 0.3
-		globalData.fxOn = false
+		fxOn = false
 	else
 		event.target.alpha = 1
-		globalData.fxOn = true
+		fxOn = true
 	end
 end
 
@@ -173,8 +178,9 @@ function scene:show( event )
 		-- Code here runs when the scene is entirely on screen
 		print ("Showing Menu Scene")
 
+		print (musicOn)
 		-- Start the music!
-		if(globalData.musicOn) then
+		if(musicOn) then
 			playMusic()
 		end
 

@@ -1,4 +1,10 @@
 local composer = require( "composer" )
+local globalData = require( "globalData" )
+
+-- Set Global data
+globalData.difficulty = "Normal"
+globalData.musicOn = true
+globalData.fxOn = true 
  
 -- Content Values for debugging
 print( "Scaling: " .. display.pixelWidth / display.actualContentWidth )

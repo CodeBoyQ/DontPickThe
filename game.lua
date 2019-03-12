@@ -1,6 +1,6 @@
 
 local composer = require( "composer" )
-
+local globalData = require( "globalData" )
 local scene = composer.newScene()
 
 -- -----------------------------------------------------------------------------------
@@ -29,6 +29,12 @@ local ballsTable = {}
 local gameLoopTimer
 local floor
 
+local gameIsPaused = false
+
+-- Global settings
+local musicOn = globalData.musicOn
+local fxOn = globalData.fxOn
+
 -- Message items
 local messageBackground
 
@@ -39,9 +45,6 @@ local uiGroup
 
 -- Game settings
 local maxNrOfBalls = 25
-local difficulty
-local musicOn
-local fxOn
 
 -- Probability system (order small to large chance) minimum is 10
 local chance7Balls    = 50 -- Every ball has 1 out of x chance to give you 7 extra balls
@@ -100,6 +103,12 @@ local ball3Frame = 3
 local ball7Frame = 4
 local jokerFrame = 5
 local bombFrame = 6
+
+local function pauseGame()
+    gameIsPaused = true
+	local options = { effect = "slideUp", time = 500}
+    composer.gotoScene( "pause" , options)
+end
 
 local function clearBallTable()
 
@@ -458,6 +467,8 @@ local function setupStatusbar()
     pauseButton.x = screenLeft + (screenWidth * 0.93)
     pauseButton.y = screenTop + (screenHeight * paddingTop)
 
+    pauseButton:addEventListener( "tap", pauseGame )
+
 end
 
 -- @DEBUG monitor Memory Usage
@@ -489,11 +500,6 @@ function scene:create( event )
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
     physics.pause()  -- Temporarily pause the physics engine
-    
-    -- Set the game settings
-    difficulty = event.params.difficulty
-    musicOn = event.params.musicOn
-    fxOn = event.params.fxOn
 
 	-- Set up display groups
 	backGroup = display.newGroup()  -- Display group for the background image
