@@ -17,7 +17,7 @@ display.setStatusBar( display.HiddenStatusBar )
 math.randomseed( os.time() )
  
 -- Reserve channel 1 for background music
-audio.reserveChannels( 1 )
+audio.reserveChannels( 1 )  -- Menu and Game music
 
 -- Reduce the overall volume of the channel
 audio.setVolume( 0.3, { channel = 1 } )

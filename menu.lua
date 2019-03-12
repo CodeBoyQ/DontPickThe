@@ -57,11 +57,11 @@ end
 local function toggleMusic(event)
 	if (musicOn == true) then
 		event.target.alpha = 0.3
-		audio.pause(1)
+		audio.setVolume( 0, { channel = 1 } )
 		musicOn = false
 	else
 		event.target.alpha = 1
-		audio.resume(1)
+		audio.setVolume( 0.3, { channel = 1 } )
 		musicOn = true
 	end
 end
@@ -92,6 +92,8 @@ end
 
 -- create()
 function scene:create( event )
+
+	print ("Creating Menu Scene")
 
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
@@ -174,9 +176,13 @@ function scene:show( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs when the scene is entirely on screen
+		print ("Showing Menu Scene")
 
+		print (musicOn)
 		-- Start the music!
-		playMusic()
+		if(musicOn) then
+			playMusic()
+		end
 
 	end
 end
@@ -193,9 +199,7 @@ function scene:hide( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
-
-		-- Music is not stopped, because you have to be able to switch between tutorials en highscores
-		-- audio.stop( 1 )
+		print ("Hiding Menu Scene")
 
 	end
 end
@@ -204,12 +208,10 @@ end
 -- destroy()
 function scene:destroy( event )
 
+	print ("Destroying Menu Scene")
+
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view
-
-	-- Dispose audio!
-	audio.dispose( backgroundTrack )
-	audio.dispose( backgroundTrackChorus )
 
 end
 

@@ -62,6 +62,8 @@ end
 -- create()
 function scene:create( event )
 
+	print ("Creating Highscores Scene")
+
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
@@ -124,7 +126,7 @@ function scene:show( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs when the scene is entirely on screen
-
+		print ("Showing Highscores Scene")
 	end
 end
 
@@ -140,13 +142,17 @@ function scene:hide( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
-		composer.removeScene( "highscores" )
+		print ("Hiding Highscores Scene")
+
+		-- composer.removeScene( "highscores" )
 	end
 end
 
 
 -- destroy()
 function scene:destroy( event )
+
+	print ("Destroying Highscores Scene")
 
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view

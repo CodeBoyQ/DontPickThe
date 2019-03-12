@@ -15,7 +15,7 @@ local screenWidth = display.actualContentWidth
 -- -----------------------------------------------------------------------------------
 
 local function gotoMenu()
-	local options = { effect = "fromBottom", time = 500 }
+	local options = { effect = "slideRight", time = 500 }
     composer.gotoScene( "menu" , options)
 end
 
@@ -25,6 +25,8 @@ end
 
 -- create()
 function scene:create( event )
+
+	print ("Creating Tutorial Scene")
 
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
@@ -55,6 +57,7 @@ function scene:show( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs when the scene is entirely on screen
+		print ("Showing Tutorial Scene")
 
 	end
 end
@@ -71,7 +74,9 @@ function scene:hide( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
-		composer.removeScene( "tutorials" )
+		print ("Hiding Tutorial Scene")
+		
+		--composer.removeScene( "tutorials" )
 
 	end
 end
@@ -79,6 +84,8 @@ end
 
 -- destroy()
 function scene:destroy( event )
+
+	print ("Destroying Tutorial Scene")
 
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view

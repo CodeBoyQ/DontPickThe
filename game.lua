@@ -382,6 +382,7 @@ local function setupSounds()
 end
 
 local function disposeSounds()
+    audio.stop() -- All sounds on all Channels must be stopped before disposing them. This counts for the Music playing on Channel 1
     audio.dispose( explosionSound )
     audio.dispose( musicTrackGame )
     audio.dispose( ballBallBounceSound )
@@ -482,6 +483,8 @@ end
 -- create()
 function scene:create( event )
 
+    print ("Creating Game Scene")
+
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
@@ -517,6 +520,8 @@ end
 -- show()
 function scene:show( event )
 
+    print ("Showing Game Scene")
+
 	local sceneGroup = self.view
 	local phase = event.phase
 
@@ -531,8 +536,8 @@ function scene:show( event )
 
         -- Start the music!
         if (musicOn) then
-            audio.fadeOut(1)
-            audio.play( musicTrackGame, { channel = 2, loops = -1 } )
+            audio.stop(1) -- Stop Menu Music on Channel 1
+            audio.play( musicTrackGame, { channel = 1, loops = -1 } ) -- Start Game Music on Channel 1
         end
 		
 	end
@@ -542,9 +547,11 @@ end
 -- hide()
 function scene:hide( event )
 
+    print("Hiding Game Scene")
+
 	local sceneGroup = self.view
-	local phase = event.phase
- 
+    local phase = event.phase
+    
 	if ( phase == "will" ) then
 		-- Code here runs when the scene is on screen (but is about to go off screen)
 		timer.cancel( gameLoopTimer )
@@ -556,7 +563,7 @@ function scene:hide( event )
 		composer.removeScene( "game" )
 
 		-- Stop the music!
-		audio.stop( 1 )
+        audio.stop() -- All channels are stopped
 	end
 end
 
@@ -564,8 +571,10 @@ end
 -- destroy()
 function scene:destroy( event )
 
+    print("Destroying Game Scene")
+
 	local sceneGroup = self.view
-	-- Code here runs prior to the removal of scene's view
+    -- Code here runs prior to the removal of scene's view
 
     -- Dispose audio!
     disposeSounds()
