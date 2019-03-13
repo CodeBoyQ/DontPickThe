@@ -139,10 +139,16 @@ function scene:create( event )
 	local buttonMusicOnOff = display.newImageRect( sceneGroup, "images/menu_button_music.png", 134, 139)
 	buttonMusicOnOff.x = display.contentCenterX - (screenWidth * 0.07)
 	buttonMusicOnOff.y = screenTop + (screenHeight * 0.84)
+	if (globalData.musicOn == false) then
+		buttonMusicOnOff.alpha = 0.3
+	end
 
 	local buttonFxOnOff = display.newImageRect( sceneGroup, "images/menu_button_fx.png", 154, 137)
 	buttonFxOnOff.x = display.contentCenterX + (screenWidth * 0.07)
 	buttonFxOnOff.y = screenTop + (screenHeight * 0.84)
+	if (globalData.fxOn == false) then
+		buttonFxOnOff.alpha = 0.3
+	end
 	
 	buttonStart:addEventListener( "tap", gotoGame )
 	buttonDifficulty:addEventListener( "tap", setDifficulty )
@@ -174,9 +180,10 @@ function scene:show( event )
 		print ("Showing Menu Scene")
 
 		-- Start the music!
-		if(globalData.musicOn) then
-			playMusic()
+		if(not globalData.musicOn) then
+			audio.setVolume( 0, { channel = 1 } )
 		end
+		playMusic()
 
 	end
 end

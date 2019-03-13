@@ -106,7 +106,7 @@ local bombFrame = 6
 
 local function pauseGame()
     gameIsPaused = true
-	local options = { effect = "slideUp", time = 500}
+	local options = { effect = "fade", time = 200}
     composer.gotoScene( "pause" , options)
 end
 
@@ -132,11 +132,15 @@ local function updateStatubar()
     transition.to( nrOfBallsProgress, { time=1000, width = nrOfBallsProgressInit * (nrOfBalls / maxNrOfBalls) })
 end
 
+local function gameOver()
+    composer.setVariable( "finalScore", score ) --TODO: Geen ouderwetse setVariable gebruiken
+    composer.gotoScene( "highscores", { time=800, effect="crossFade" } )
+end
+
 local function determineGamestatus()
     if (joker < 0) then
         -- Game Over
-        composer.setVariable( "finalScore", score )
-        composer.gotoScene( "highscores", { time=800, effect="crossFade" } )
+        gameOver()
     elseif (nrOfBalls == 0) then
         -- Ultimate Winner
     else
@@ -526,34 +530,51 @@ end
 -- show()
 function scene:show( event )
 
-    print ("Showing Game Scene")
-
 	local sceneGroup = self.view
-	local phase = event.phase
+    local phase = event.phase
+    
+    local shutdownGame = false
+    if (event.params ~= nil) then
+        shutdownGame = event.params.shutdownGame
+    end
 
 	if ( phase == "will" ) then
 		-- Code here runs when the scene is still off screen (but is about to come on screen)
 
-	elseif ( phase == "did" ) then
-		-- Code here runs when the scene is entirely on screen
-        physics.start()
-        Runtime:addEventListener( "collision", onCollision )
-        gameLoopTimer = timer.performWithDelay( 500, gameLoop, 0 )
+    elseif ( phase == "did" ) then
+        -- Code here runs when the scene is entirely on screen
+        print ("Showing Game Scene")
+        if (gameIsPaused) then
+            -- Resuming game from a paused state
+            print("-Returning from Paused state")
+            gameIsPaused = false
 
-        -- Start the music!
-        if (musicOn) then
+            if (shutdownGame) then
+                -- The user requested to go to the Main Menu. Gracefully shutdown
+                print ( "Shut down the game!")
+                gameOver()
+            end
+        
+        else
+            -- Starting new game
+            print("-Starting new game")
+            physics.start()
+            Runtime:addEventListener( "collision", onCollision )
+            gameLoopTimer = timer.performWithDelay( 500, gameLoop, 0 )
+
+            -- Inititialise the Music
             audio.stop(1) -- Stop Menu Music on Channel 1
+            if(not globalData.musicOn) then -- If music is disabled then set volume to zero
+                audio.setVolume( 0, { channel = 1 } )
+            end
             audio.play( musicTrackGame, { channel = 1, loops = -1 } ) -- Start Game Music on Channel 1
-        end
-		
+		end
 	end
 end
 
 
 -- hide()
 function scene:hide( event )
-
-    print("Hiding Game Scene")
 
 	local sceneGroup = self.view
     local phase = event.phase
@@ -562,14 +583,20 @@ function scene:hide( event )
 		-- Code here runs when the scene is on screen (but is about to go off screen)
 		timer.cancel( gameLoopTimer )
 
-	elseif ( phase == "did" ) then
-		-- Code here runs immediately after the scene goes entirely off screen
-		Runtime:removeEventListener( "collision", onCollision )
-		physics.pause()
-		composer.removeScene( "game" )
-
-		-- Stop the music!
-        audio.stop() -- All channels are stopped
+    elseif ( phase == "did" ) then
+        -- Code here runs immediately after the scene goes entirely off screen
+        print("Hiding Game Scene")
+        if (gameIsPaused) then
+            -- Hiding scene, because the game is paused. Don't clean up anything
+            print("-Going to Pause screen")
+        else
+            -- Ending the game. Clean up!
+            print("-End of Game")
+            Runtime:removeEventListener( "collision", onCollision )
+            physics.pause()
+            composer.removeScene( "game" )
+            audio.stop() -- All channels are stopped
+        end
 	end
 end
 

@@ -1,6 +1,6 @@
 
 local composer = require( "composer" )
-
+local globalData = require( "globalData" )
 local scene = composer.newScene()
 
 -- Actual device screen values (This will differ per device)
@@ -9,83 +9,45 @@ local screenLeft = display.screenOriginX
 local screenHeight = display.actualContentHeight
 local screenWidth = display.actualContentWidth
 
--- Global game settings
-local difficulty = "Normal"
-local musicOn = true
-local fxOn = true 
-
--- Sound variables
-local backgroundTrack
-local backgroundTrackChorus
 
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
 
-local function gotoGame()
-	local options = { effect = "slideUp", time = 500, params = { difficulty = difficulty, musicOn = musicOn, fxOn = fxOn} }
+local function continueGame()
+	local options = { effect = "fade", time = 200}
     composer.gotoScene( "game" , options)
 end
  
-local function gotoTutorial()
-	local options = { effect = "slideLeft", time = 500 }
-    composer.gotoScene( "tutorial" , options)
-end
-
-local function gotoHighScores()
-local options = { effect = "slideRight", time = 500 }
-    composer.gotoScene( "highscores" , options)
-end
-
-local function setDifficulty() 
-	if (difficulty == "Easy") then
-		difficulty = "Normal"
-		levelNormal.isVisible = true
-		levelEasy.isVisible = false
-	elseif (difficulty == "Normal") then
-		difficulty = "Hard"
-		levelHard.isVisible = true
-		levelNormal.isVisible = false
-	elseif (difficulty == "Hard") then
-		difficulty = "Easy"
-		levelEasy.isVisible = true
-		levelHard.isVisible = false
-	end
+local function gotoMainMenu()
+	local options = { effect = "fade", time = 200, params = {shutdownGame = true}}
+    composer.gotoScene( "game" , options) -- First ga back to game scene to clean up the game gracefully
 end
 
 local function toggleMusic(event)
-	if (musicOn == true) then
+	if (globalData.musicOn == true) then
 		event.target.alpha = 0.3
 		audio.setVolume( 0, { channel = 1 } )
-		musicOn = false
+		globalData.musicOn = false
 	else
 		event.target.alpha = 1
 		audio.setVolume( 0.3, { channel = 1 } )
-		musicOn = true
+		globalData.musicOn = true
 	end
 end
 
 local function toggleFx(event)
-	if (fxOn == true) then
+	if (globalData.fxOn == true) then
 		event.target.alpha = 0.3
-		fxOn = false
+		globalData.fxOn = false
 	else
 		event.target.alpha = 1
-		fxOn = true
+		globalData.fxOn = true
 	end
 end
 
--- These functions had to be global, since they call each other
-function playMusic()
-	print("playMusic")
-	audio.play( backgroundTrack, { channel = 1, loops = 1, onComplete=playChorusMusic } )
-end
 
-function playChorusMusic()
-	print("playChorusMusic")
-	audio.play( backgroundTrackChorus, { channel = 1, loops = 1, onComplete=playMusic } )
-end
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
 -- -----------------------------------------------------------------------------------
@@ -93,7 +55,7 @@ end
 -- create()
 function scene:create( event )
 
-	print ("Creating Menu Scene")
+	print ("Creating Pause Scene")
 
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
@@ -102,63 +64,36 @@ function scene:create( event )
     background.x = display.contentCenterX
 	background.y = display.contentCenterY
 
-	local title = display.newImageRect( sceneGroup, "images/menu_title.png", 851, 470 )
+	local title = display.newImageRect( sceneGroup, "images/pause_title.png", 681, 272 )
     title.x = display.contentCenterX
-	title.y = screenTop + (screenHeight * 0.23)
+	title.y = screenTop + (screenHeight * 0.35)
 
-	local buttonStart = display.newImageRect( sceneGroup, "images/menu_button_start.png", 686, 144)
-	buttonStart.x = display.contentCenterX
-	buttonStart.y = screenTop + (screenHeight * 0.43)
+	local buttonMainMenu = display.newImageRect( sceneGroup, "images/pause_button_main_menu.png", 686, 144)
+	buttonMainMenu.x = display.contentCenterX
+	buttonMainMenu.y = screenTop + (screenHeight * 0.50)
 
-	local buttonDifficulty = display.newImageRect( sceneGroup, "images/menu_button_difficulty.png", 686, 144)
-	buttonDifficulty.x = display.contentCenterX
-	buttonDifficulty.y = screenTop + (screenHeight * 0.52)
-	
-	-- Level buttons (Are globally instantiated, because they are used in the setDifficulty method)
-	levelEasy = display.newImageRect( sceneGroup, "images/menu_level_easy.png", 226, 43)
-	levelEasy.anchorX = 0
-	levelEasy.x = display.contentCenterX - (buttonDifficulty.width / 2)
-	levelEasy.y = screenTop + (screenHeight * 0.58)
-	levelEasy.isVisible = false
-
-	levelNormal = display.newImageRect( sceneGroup, "images/menu_level_normal.png", 433, 43)
-	levelNormal.anchorX = 0
-	levelNormal.x = display.contentCenterX - (buttonDifficulty.width / 2)
-	levelNormal.y = screenTop + (screenHeight * 0.58)
-	levelNormal.isVisible = true
-
-	levelHard = display.newImageRect( sceneGroup, "images/menu_level_hard.png", 686, 43)
-	levelHard.anchorX = 0
-	levelHard.x = display.contentCenterX - (buttonDifficulty.width / 2)
-	levelHard.y = screenTop + (screenHeight * 0.58)
-	levelHard.isVisible = false
-
-	local buttonTutorial = display.newImageRect( sceneGroup, "images/menu_button_tutorial.png", 686, 144)
-	buttonTutorial.x = display.contentCenterX
-	buttonTutorial.y = screenTop + (screenHeight * 0.65)
-
-	local buttonHighscores = display.newImageRect( sceneGroup, "images/menu_button_highscores.png", 686, 144)
-	buttonHighscores.x = display.contentCenterX
-	buttonHighscores.y = screenTop + (screenHeight * 0.74)
+	local buttonContinue = display.newImageRect( sceneGroup, "images/pause_button_continue.png", 686, 144)
+	buttonContinue.x = display.contentCenterX
+	buttonContinue.y = screenTop + (screenHeight * 0.59)
 
 	local buttonMusicOnOff = display.newImageRect( sceneGroup, "images/menu_button_music.png", 134, 139)
 	buttonMusicOnOff.x = display.contentCenterX - (screenWidth * 0.07)
-	buttonMusicOnOff.y = screenTop + (screenHeight * 0.84)
+	buttonMusicOnOff.y = screenTop + (screenHeight * 0.71)
+	if (globalData.musicOn == false) then
+		buttonMusicOnOff.alpha = 0.3
+	end
 
 	local buttonFxOnOff = display.newImageRect( sceneGroup, "images/menu_button_fx.png", 154, 137)
 	buttonFxOnOff.x = display.contentCenterX + (screenWidth * 0.07)
-	buttonFxOnOff.y = screenTop + (screenHeight * 0.84)
+	buttonFxOnOff.y = screenTop + (screenHeight * 0.71)
+	if (globalData.fxOn == false) then
+		buttonFxOnOff.alpha = 0.3
+	end
 	
-	buttonStart:addEventListener( "tap", gotoGame )
-	buttonDifficulty:addEventListener( "tap", setDifficulty )
-	buttonTutorial:addEventListener( "tap", gotoTutorial )
-	buttonHighscores:addEventListener( "tap", gotoHighScores )
+	buttonMainMenu:addEventListener( "tap", gotoMainMenu )
+	buttonContinue:addEventListener( "tap", continueGame )
 	buttonMusicOnOff:addEventListener( "tap", toggleMusic )
 	buttonFxOnOff:addEventListener( "tap", toggleFx )
-
-	-- Setup Audio
-	backgroundTrack = audio.loadStream( "audio/menuLoop.wav")
-	backgroundTrackChorus = audio.loadStream( "audio/menuLoopChorus.wav")
 
 end
 
@@ -176,13 +111,7 @@ function scene:show( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs when the scene is entirely on screen
-		print ("Showing Menu Scene")
-
-		print (musicOn)
-		-- Start the music!
-		if(musicOn) then
-			playMusic()
-		end
+		print ("Showing Pause Scene")
 
 	end
 end
@@ -199,7 +128,7 @@ function scene:hide( event )
 
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
-		print ("Hiding Menu Scene")
+		print ("Hiding Pause Scene")
 
 	end
 end
@@ -208,7 +137,7 @@ end
 -- destroy()
 function scene:destroy( event )
 
-	print ("Destroying Menu Scene")
+	print ("Destroying Pause Scene")
 
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view

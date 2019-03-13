@@ -3,7 +3,7 @@ local globalData = require( "globalData" )
 
 -- Set Global data
 globalData.difficulty = "Normal"
-globalData.musicOn = true
+globalData.musicOn = false
 globalData.fxOn = true 
  
 -- Content Values for debugging
@@ -29,5 +29,5 @@ audio.reserveChannels( 1 )  -- Menu and Game music
 audio.setVolume( 0.3, { channel = 1 } )
 
 -- Go to the menu screen
-composer.gotoScene( "menu" )
---composer.gotoScene( "game", { params = { difficulty = "Normal"} } )
+--composer.gotoScene( "menu" )
+composer.gotoScene( "game", { params = { difficulty = "Normal"} } )
