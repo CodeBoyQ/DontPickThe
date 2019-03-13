@@ -9,6 +9,8 @@ local screenLeft = display.screenOriginX
 local screenHeight = display.actualContentHeight
 local screenWidth = display.actualContentWidth
 
+local finalScore
+
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
@@ -29,7 +31,7 @@ local function loadScores()
         local contents = file:read( "*a" )
         io.close( file )
         scoresTable = json.decode( contents )
-    end
+	end
  
     if ( scoresTable == nil or #scoresTable == 0 ) then
         scoresTable = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
@@ -55,6 +57,18 @@ local function gotoMenu()
     composer.gotoScene( "menu" , options)
 end
 
+local function tableContains(score)
+	local contains = false
+	for i = 1, 10 do
+		if ( scoresTable[i] ) then
+			if (scoresTable[i] == score) then
+			contains = true
+			end
+        end
+	end
+	return contains
+end
+
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
 -- -----------------------------------------------------------------------------------
@@ -70,9 +84,17 @@ function scene:create( event )
 	-- Load the previous scores
 	loadScores()
 	
-	-- Insert the saved score from the last game into the table, then reset it
-	table.insert( scoresTable, composer.getVariable( "finalScore" ) )
-	composer.setVariable( "finalScore", 0 )
+	-- Read the finalScore (if redirected to this scene from the Menu scene there is no final score)
+	finalScore = composer.getVariable( "finalScore" )
+	if (finalScore == nil) then
+		finalScore = -1
+	end
+
+	-- Insert the final score from the last game into the table (if not duplicate) and then reset it
+	if (not tableContains(finalScore)) then
+		table.insert( scoresTable, finalScore)
+	end
+	composer.setVariable( "finalScore", -1 )
 
 	-- Sort the table entries from highest to lowest
 	local function compare( a, b )
@@ -87,30 +109,41 @@ function scene:create( event )
     background.x = display.contentCenterX
 	background.y = display.contentCenterY
 
+	local title = display.newImageRect( sceneGroup, "images/highscores_title.png", 845, 271 )
+    title.x = display.contentCenterX
+	title.y = screenTop + (screenHeight * 0.15)
+
 	local buttonBack = display.newImageRect( sceneGroup, "images/back_button.png", 260, 144)
 	buttonBack.x = display.contentCenterX
 	buttonBack.y = screenTop + (screenHeight * 0.92)
-	
 	buttonBack:addEventListener( "tap", gotoMenu )
-     
-    local highScoresHeader = display.newText( sceneGroup, "High Scores", display.contentCenterX, 100, native.systemFont, 44 )
-
+ 
 	for i = 1, 10 do
         if ( scoresTable[i] ) then
-            local yPos = 150 + ( i * 56 )
+            local yPos = screenTop + (screenHeight * 0.23) + ( i * screenHeight / 20 )
  
-            local rankNum = display.newText( sceneGroup, i .. ")", display.contentCenterX-50, yPos, native.systemFont, 36 )
-            rankNum:setFillColor( 0.8 )
+            local rankNum = display.newText( sceneGroup, i .. ".", display.contentCenterX - 50, yPos, native.systemFont, 70 )
             rankNum.anchorX = 1
  
-            local thisScore = display.newText( sceneGroup, scoresTable[i], display.contentCenterX-30, yPos, native.systemFont, 36 )
-            thisScore.anchorX = 0
+			local thisScore = display.newText( sceneGroup, scoresTable[i], display.contentCenterX-30, yPos, native.systemFont, 70 )
+			thisScore.anchorX = 0
+
+			-- Display the final Score in a different color
+			
+			if (tonumber(thisScore.text) == finalScore)then
+				rankNum:setFillColor( 1.0, 1.0, 0 )
+				thisScore:setFillColor (1.0, 1.0, 0)
+
+				if (i == 1) then
+					-- New Highscore
+					local newHighScoreText = display.newText( sceneGroup, "New Highscore!!!", display.contentCenterX, screenHeight * 0.72, native.systemFont, 90 )
+					newHighScoreText:setFillColor (1.0, 1.0, 0)
+				end
+			end
+
+
         end
 	end
-
-	local menuButton = display.newText( sceneGroup, "Menu", display.contentCenterX, 810, native.systemFont, 44 )
-    menuButton:setFillColor( 0.75, 0.78, 1 )
-    menuButton:addEventListener( "tap", gotoMenu )
 	
 end
 
@@ -143,8 +176,7 @@ function scene:hide( event )
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
 		print ("Hiding Highscores Scene")
-
-		-- composer.removeScene( "highscores" )
+		composer.removeScene( "highscores" )
 	end
 end
 

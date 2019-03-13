@@ -156,7 +156,6 @@ local function determineGamestatus()
         -- Ultimate Winner
     else
         -- Next Level
-        updateStatubar()
         physics.addBody( floor, "static", { density=wallDensity, friction=wallFriction, bounce=wallBounceRate })
         clearBallTable()
         ballTapAllowed = true
@@ -228,14 +227,15 @@ local function handleTapBallEvent( event )
 
         -- There can only be a maximum of [maxNrOfBalls] in the game
         if (nrOfBalls > maxNrOfBalls) then
-            local overflowBonus = (nrOfBalls - maxNrOfBalls) * 100
+            local overflowBonus = (nrOfBalls - maxNrOfBalls) * 50
             nrOfBalls = maxNrOfBalls
             score = score + overflowBonus -- You get bonus points for the balls that you've lost because they exceed
             message = message .. "\n Overflow Bonus!! " .. overflowBonus
         end
 
-        -- Update score
+        -- Update score and statusbar
         score = score + nrOfBalls
+        updateStatubar()
 
         -- Show the content of all the balls
         for i = #ballsTable, 1, -1 do
@@ -391,7 +391,7 @@ end
 
 local function  setupExplosion()
     local dx = 200
-    local p = "images/habra.png"
+    local p = "images/particle.png"
     local emitterParams = {
           startParticleSizeVariance = dx/2,
           startColorAlpha = 0.61,
@@ -502,7 +502,7 @@ local function setupStatusbar()
     scoreBackground.anchorX = 0
     scoreBackground.x = screenLeft + (screenWidth * 0.55)
     scoreBackground.y = screenTop + (screenHeight * paddingTop)
-    scoreText = display.newText( uiGroup, score, screenLeft + (screenWidth * 0.83), scoreBackground.y, native.systemFont, 50 )
+    scoreText = display.newText( uiGroup, score, screenLeft + (screenWidth * 0.81), scoreBackground.y, native.systemFont, 50 )
     scoreText.anchorX = scoreText.width
 
     -- Pause button
