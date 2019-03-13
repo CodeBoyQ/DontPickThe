@@ -3,7 +3,7 @@ local globalData = require( "globalData" )
 
 -- Set Global data
 globalData.difficulty = "Normal"
-globalData.musicOn = false
+globalData.musicOn = false --TODO: Weer op true zetten
 globalData.fxOn = true 
  
 -- Content Values for debugging

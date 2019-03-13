@@ -8,11 +8,23 @@ local scene = composer.newScene()
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
 
+-- Actual device screen values (This will differ per device)
+local screenTop = display.screenOriginY
+local screenLeft = display.screenOriginX
+local screenHeight = display.actualContentHeight
+local screenWidth = display.actualContentWidth
+
 -- Physics variables
 local physics = require( "physics" )
 physics.start()
 physics.setGravity( 0, 70.8 )
-local bounceRate = 0.7
+local ballBounceRate = 0.7
+local ballFriction = 0.8
+local ballDensity = 1.6
+local wallDensity = 0.1
+local wallFriction = 0.3
+local wallBounceRate = 0.7
+local minVelocityForCollision = display.contentHeight / 3.0 -- Collision for the balls and walls is only detected if one of the ball has a velocity greater than x. This is to prevent continuous collision detection, because the balls are in constant motion, even when they tend to stand still
 local emitter
 
 -- Statusbar items
@@ -30,10 +42,6 @@ local gameLoopTimer
 local floor
 
 local gameIsPaused = false
-
--- Global settings
-local musicOn = globalData.musicOn
-local fxOn = globalData.fxOn
 
 -- Message items
 local messageBackground
@@ -56,24 +64,18 @@ local chanceExtraBomb =  20 -- Every ball has 1 out of x chance to be an extra B
 -- Debug options, set all to false for production mode
 local ballContentVisible = true
 local dumpMemoryDebugMode = false
-
--- Actual device screen values (This will differ per device)
-local screenTop = display.screenOriginY
-local screenLeft = display.screenOriginX
-local screenHeight = display.actualContentHeight
-local screenWidth = display.actualContentWidth
     
 -- The boundaries of the area (out of screen) from where the balls will be released and the radius of the balls
 local ballRadius = 150
-local ballReleaseAreaHeight = 800
+local ballReleaseAreaHeight = screenHeight
 local ballReleaseAreaMinX = screenLeft + ballRadius
 local ballReleaseAreaMaxX = screenLeft + screenWidth - ballRadius
 local ballReleaseAreaMinY = screenTop - ballReleaseAreaHeight + ballRadius
 local ballReleaseAreaMaxY = screenTop - ballRadius
 
 -- Sound variables
-local explosionSound
 local musicTrackGame
+local explosionSound
 local ballBallBounceSound
 local ballWallBounceSound
 
@@ -146,7 +148,7 @@ local function determineGamestatus()
     else
         -- Next Level
         updateStatubar()
-        physics.addBody( floor, "static", {bounce=bounceRate})
+        physics.addBody( floor, "static", { density=wallDensity, friction=wallFriction, bounce=wallBounceRate })
         clearBallTable()
         dropBalls(nrOfBalls)
     end
@@ -184,7 +186,7 @@ local function handleTapBallEvent( event )
             messageType = "Bad"
         end 
         -- Play explosionsound
-        if (fxOn) then
+        if (globalData.fxOn) then
             audio.play( explosionSound )
         end
     elseif (ball.name == "7Balls") then
@@ -300,7 +302,7 @@ function dropBalls(numberOfBalls)
         newBall.y = math.random (ballReleaseAreaMinY, ballReleaseAreaMaxY)
 
         -- Add physics and listener
-        physics.addBody( newBall, "dynamic", { radius=ballRadius, density=50, friction = 0.3, bounce=bounceRate } )
+        physics.addBody( newBall, "dynamic", { radius=ballRadius, density=ballDensity, friction = ballFriction, bounce=ballBounceRate } )
         newBall:addEventListener( "tap", handleTapBallEvent )
 
     end
@@ -333,6 +335,12 @@ local function gameLoop()
     -- Noop
     
 end
+
+local function onPreCollision( event )
+
+    -- Can be used to do preCollision tasks
+
+end
  
 local function onCollision( event )
  
@@ -341,12 +349,33 @@ local function onCollision( event )
         local obj1 = event.object1
         local obj2 = event.object2
 
-        if ( obj1.name == "wall" or obj2.name == "wall" ) then
-            -- Ball hits wall
-            -- audio.play( ballBallBounceSound)
-        elseif ( obj1.name ~= "wall" and obj2.name ~= "wall" ) then
-            -- Ball to ball collision
-			--audio.play( ballBallBounceSound )
+        -- Calculate the velocity of both objects
+        local vx1, vy1 = obj1:getLinearVelocity()
+        local vx2, vy2 = obj2:getLinearVelocity()
+
+        local velocity1 = math.abs(vx1) + math.abs(vy1)
+        local velocity2 = math.abs(vx2) + math.abs(vy2)
+    
+        --print (velocity1 .. " " .. velocity2)
+
+        -- Only play collision sounds when 
+        -- 1. Both items are in the viewable area
+        -- 2. One of the two items has a velocity higher than minVelocityForCollision
+        if (
+            (obj1.y > screenTop and obj1.y < (screenTop + screenHeight) and obj2.y > screenTop and obj2.y < (screenTop + screenHeight) )
+            and
+            (velocity1 > minVelocityForCollision or velocity2 > minVelocityForCollision)) then
+            if ( obj1.name == "wall" or obj2.name == "wall" ) then
+                -- Ball hits wall
+                if (globalData.fxOn) then
+                    audio.play( ballWallBounceSound )
+                end
+            elseif ( obj1.name ~= "wall" and obj2.name ~= "wall" ) then
+                -- Ball to ball collision
+                if (globalData.fxOn) then
+                    audio.play( ballBallBounceSound )
+                end
+            end
         end
     end
 end
@@ -414,20 +443,21 @@ local function setupBackground()
     leftWall.x = screenLeft - 50
     leftWall.y = display.contentCenterY - (ballReleaseAreaHeight/2)
     leftWall.name = "wall"
-    physics.addBody( leftWall, "static")
+    physics.addBody( leftWall, "static", { density=wallDensity, friction=wallFriction, bounce=wallBounceRate })
 
     local rightWall = display.newImageRect( backGroup, "images/wall.png", 100, screenHeight + ballReleaseAreaHeight) -- The ballReleaseAreaHeight area is where the balls are created to fall in to the screen
     rightWall.x = screenLeft + screenWidth + 50
     rightWall.y = display.contentCenterY - (ballReleaseAreaHeight/2)
     rightWall.name = "wall"
-    physics.addBody( rightWall, "static")
+    physics.addBody( rightWall, "static", { density=wallDensity, friction=wallFriction, bounce=wallBounceRate })
     
     -- Floor is a global variable since it will be used on multiple places (e.g. )
     floor = display.newImageRect( backGroup, "images/wall.png", display.actualContentWidth, 100 )
     floor.x = display.contentCenterX
     floor.y = screenTop + screenHeight + 50
     floor.name = "wall"
-    physics.addBody( floor, "static", {bounce=bounceRate})
+    physics.addBody( floor, "static", { density=wallDensity, friction=wallFriction, bounce=wallBounceRate })
+    
 end
 
 local function setupStatusbar()
@@ -559,6 +589,7 @@ function scene:show( event )
             -- Starting new game
             print("-Starting new game")
             physics.start()
+            Runtime:addEventListener( "preCollision", onPreCollision )
             Runtime:addEventListener( "collision", onCollision )
             gameLoopTimer = timer.performWithDelay( 500, gameLoop, 0 )
 
@@ -593,6 +624,7 @@ function scene:hide( event )
             -- Ending the game. Clean up!
             print("-End of Game")
             Runtime:removeEventListener( "collision", onCollision )
+            Runtime:removeEventListener( "preCollision", onPreCollision )
             physics.pause()
             composer.removeScene( "game" )
             audio.stop() -- All channels are stopped
