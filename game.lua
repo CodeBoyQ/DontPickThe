@@ -42,6 +42,7 @@ local gameLoopTimer
 local floor
 
 local gameIsPaused = false
+local ballTapAllowed = true -- This variable is used to make sure that only one ball can be clicked simultaniously during one game
 
 -- Message items
 local messageBackground
@@ -99,6 +100,14 @@ local sequencesBall = {
     },
 }
 
+-- Object name constants
+local BOMB = "Bomb"
+local BALL7 = "7Balls"
+local BALL3 = "3Balls"
+local BALL1 = "1Balls"
+local JOKER = "Joker"
+local WALL = "Wall"
+
 local normalFrame = 1
 local ball1Frame = 2
 local ball3Frame = 3
@@ -150,6 +159,7 @@ local function determineGamestatus()
         updateStatubar()
         physics.addBody( floor, "static", { density=wallDensity, friction=wallFriction, bounce=wallBounceRate })
         clearBallTable()
+        ballTapAllowed = true
         dropBalls(nrOfBalls)
     end
 end
@@ -162,101 +172,106 @@ end
 
 local function handleTapBallEvent( event )
 
-    -- Check the tapped ball type
+    if (ballTapAllowed) then
 
-    local ball = event.target
+        ballTapAllowed = false
 
-    transition.to( ball, { time=1000, alpha=0, transition=easing.inOutBounce} )
+        -- Check the tapped ball type
+        local ball = event.target
 
-    local message
-    local messageType = "Good" -- Good or Bad
-    local messageSize = 100
+        transition.to( ball, { time=1000, alpha=0, transition=easing.inOutBounce} )
 
-    -- Play explotion particle
-    explosion (ball)
+        local message
+        local messageType = "Good" -- Good or Bad
+        local messageSize = 100
 
-    if (ball.name == "Bomb") then
-        -- Player looses a life
-        joker = joker - 1
-        message = "Negative Energy!!!"
-        if (joker == 0) then
-            message = message .. "\nLuckily you had a negative \n energy blocker :-)"
-            messageSize =70
+        -- Play explotion particle
+        explosion (ball)
+
+        if (ball.name == BOMB) then
+            -- Player looses a life
+            joker = joker - 1
+            message = "Negative Energy!!!"
+            if (joker == 0) then
+                message = message .. "\nLuckily you had a negative \n energy blocker :-)"
+                messageSize =70
+            else
+                messageType = "Bad"
+            end 
+            -- Play explosionsound
+            if (globalData.fxOn) then
+                audio.play( explosionSound )
+            end
+        elseif (ball.name == BALL7) then
+            -- Player gets 7 extra balls and goes to the next level
+            nrOfBalls = nrOfBalls + 7
+            message = "Good energy!! :-) \n+7!"
+        elseif (ball.name == BALL3) then
+            -- Player gets 3 extra balls and goes to the next level
+            nrOfBalls = nrOfBalls + 3
+            message = "Good energy!! \n+3!"
+        elseif (ball.name == BALL1) then
+            -- Player gets 1 extra balls and goes to the next level
+            nrOfBalls = nrOfBalls + 1
+            message = "Good energy!! \n+1!"
+        elseif (ball.name == JOKER) then
+            -- Player gets 1 extra life
+            joker = 1
+            nrOfBalls = nrOfBalls - 1
+            message = "You found a \nNegative energy \nblocker!"
+            messageSize = 70
         else
-            messageType = "Bad"
-        end 
-        -- Play explosionsound
-        if (globalData.fxOn) then
-            audio.play( explosionSound )
+            -- Normal
+            nrOfBalls = nrOfBalls - 1
+            message = "You have \n chosen wisely!"
         end
-    elseif (ball.name == "7Balls") then
-        -- Player gets 7 extra balls and goes to the next level
-        nrOfBalls = nrOfBalls + 7
-        message = "Good energy!! :-) \n+7!"
-    elseif (ball.name == "3Balls") then
-        -- Player gets 3 extra balls and goes to the next level
-        nrOfBalls = nrOfBalls + 3
-        message = "Good energy!! \n+3!"
-    elseif (ball.name == "1Balls") then
-        -- Player gets 1 extra balls and goes to the next level
-        nrOfBalls = nrOfBalls + 1
-        message = "Good energy!! \n+1!"
-    elseif (ball.name == "Joker") then
-        -- Player gets 1 extra life
-        joker = 1
-        nrOfBalls = nrOfBalls - 1
-        message = "You found a \nNegative energy \nblocker!"
-        messageSize = 70
+
+        -- There can only be a maximum of [maxNrOfBalls] in the game
+        if (nrOfBalls > maxNrOfBalls) then
+            local overflowBonus = (nrOfBalls - maxNrOfBalls) * 100
+            nrOfBalls = maxNrOfBalls
+            score = score + overflowBonus -- You get bonus points for the balls that you've lost because they exceed
+            message = message .. "\n Overflow Bonus!! " .. overflowBonus
+        end
+
+        -- Update score
+        score = score + nrOfBalls
+
+        -- Show the content of all the balls
+        for i = #ballsTable, 1, -1 do
+            local thisBall = ballsTable[i]
+            showBallContent(thisBall)
+        end
+
+        -- Let the balls fall through the ground
+        physics.removeBody( floor )
+
+        -- Show the message
+        messageBackground = display.newImageRect( uiGroup, "images/game_message_bg.png", 500, 350) --1199 x 795
+        messageBackground.x = display.contentCenterX
+        messageBackground.y = display.contentCenterY
+        transition.to( messageBackground, { time=1000, alpha=0, width = 10052, height = 715, transition=easing.outCirc} )
+    
+        local options = 
+        {
+            text = message,     
+            x = display.contentCenterX,
+            y = display.contentCenterY,
+            --width = 1280,
+            font = native.systemFont,   
+            fontSize = messageSize,
+            align = "center"  -- Alignment parameter
+        }
+        messageText = display.newText( options )
+
+        if (messageType=="Bad") then
+            messageText:setFillColor( 0,  0, 0 )
+        end
+    
+        transition.to( messageText, { time=3000, delay = 0, alpha=0, xScale=3, yScale=3, onComplete=determineGamestatus })
     else
-        -- Normal
-        nrOfBalls = nrOfBalls - 1
-        message = "You have \n chosen wisely!"
+        print ("Ball tapped not allowed more than once!")
     end
-
-    -- There can only be a maximum of [maxNrOfBalls] in the game
-    if (nrOfBalls > maxNrOfBalls) then
-        local overflowBonus = (nrOfBalls - maxNrOfBalls) * 100
-        nrOfBalls = maxNrOfBalls
-        score = score + overflowBonus -- You get bonus points for the balls that you've lost because they exceed
-        message = message .. "\n Overflow Bonus!! " .. overflowBonus
-    end
-
-    -- Update score
-    score = score + nrOfBalls
-
-    -- Show the content of all the balls
-    for i = #ballsTable, 1, -1 do
-        local thisBall = ballsTable[i]
-        showBallContent(thisBall)
-    end
-
-    -- Let the balls fall through the ground
-    physics.removeBody( floor )
-
-    -- Show the message
-    messageBackground = display.newImageRect( uiGroup, "images/game_message_bg.png", 500, 350) --1199 x 795
-    messageBackground.x = display.contentCenterX
-    messageBackground.y = display.contentCenterY
-    transition.to( messageBackground, { time=1000, alpha=0, width = 10052, height = 715, transition=easing.outCirc} )
-   
-    local options = 
-    {
-        text = message,     
-        x = display.contentCenterX,
-        y = display.contentCenterY,
-        --width = 1280,
-        font = native.systemFont,   
-        fontSize = messageSize,
-        align = "center"  -- Alignment parameter
-    }
-    messageText = display.newText( options )
-
-    if (messageType=="Bad") then
-        messageText:setFillColor( 0,  0, 0 )
-    end
- 
-    transition.to( messageText, { time=3000, delay = 0, alpha=0, xScale=3, yScale=3, onComplete=determineGamestatus })
-
 
 end
 
@@ -275,18 +290,18 @@ function dropBalls(numberOfBalls)
 
         -- Determine the ball type
         if (bomb == i) then
-            newBall.name = "Bomb"
+            newBall.name = BOMB
         else
             if (math.random(1, chance7Balls) == 7) then
-                newBall.name = "7Balls"
+                newBall.name = BALL7
             elseif (math.random(1, chance3Balls) == 3) then
-                newBall.name = "3Balls"
+                newBall.name = BALL3
             elseif (math.random(1, chance1Balls) == 1) then
                 newBall.name = "1Ball"
             elseif (joker == 0 and math.random(1, chanceJoker) == 8) then -- If the player already has a Joker, no Joker balls will be created
-                newBall.name = "Joker"
+                newBall.name = JOKER
             elseif (math.random(1, chanceExtraBomb) == 3) then
-                newBall.name = "Bomb"
+                newBall.name = BOMB
             end
         end
 
@@ -310,15 +325,15 @@ function dropBalls(numberOfBalls)
 end
 
 function showBallContent(ball) 
-    if (ball.name == "Bomb") then
+    if (ball.name == BOMB) then
         ball:setFrame(bombFrame)
-    elseif (ball.name == "7Balls") then
+    elseif (ball.name == BALL7) then
         ball:setFrame(ball7Frame)
-    elseif (ball.name == "3Balls") then
+    elseif (ball.name == BALL3) then
         ball:setFrame(ball3Frame)
-    elseif (ball.name == "1Balls") then
+    elseif (ball.name == BALL1) then
         ball:setFrame(ball1Frame)
-    elseif (ball.name == "Joker") then
+    elseif (ball.name == JOKER) then
         ball:setFrame(jokerFrame)
     else
         ball:setFrame(normalFrame)
@@ -356,23 +371,17 @@ local function onCollision( event )
         local velocity1 = math.abs(vx1) + math.abs(vy1)
         local velocity2 = math.abs(vx2) + math.abs(vy2)
     
-        --print (velocity1 .. " " .. velocity2)
-
-        -- Only play collision sounds when 
-        -- 1. Both items are in the viewable area
-        -- 2. One of the two items has a velocity higher than minVelocityForCollision
-        if (
-            (obj1.y > screenTop and obj1.y < (screenTop + screenHeight) and obj2.y > screenTop and obj2.y < (screenTop + screenHeight) )
-            and
-            (velocity1 > minVelocityForCollision or velocity2 > minVelocityForCollision)) then
-            if ( obj1.name == "wall" or obj2.name == "wall" ) then
+        -- Only play collision sounds if one of the two items has a velocity higher than minVelocityForCollision
+        if (velocity1 > minVelocityForCollision or velocity2 > minVelocityForCollision) then
+            if ( obj1.name == WALL or obj2.name == WALL ) then
                 -- Ball hits wall
                 if (globalData.fxOn) then
-                    audio.play( ballWallBounceSound )
+                    --audio.play( ballWallBounceSound )
                 end
-            elseif ( obj1.name ~= "wall" and obj2.name ~= "wall" ) then
+            elseif ( obj1.name ~= WALL and obj2.name ~= WALL ) then
                 -- Ball to ball collision
-                if (globalData.fxOn) then
+                -- Also check if the y position of the ball is in the viewable area
+                if (globalData.fxOn and (obj1.y > screenTop and obj1.y < (screenTop + screenHeight))) then
                     audio.play( ballBallBounceSound )
                 end
             end
@@ -442,20 +451,20 @@ local function setupBackground()
     local leftWall = display.newImageRect( backGroup, "images/wall.png", 100, screenHeight + ballReleaseAreaHeight ) -- The ballReleaseAreaHeight area is where the balls are created to fall in to the screen
     leftWall.x = screenLeft - 50
     leftWall.y = display.contentCenterY - (ballReleaseAreaHeight/2)
-    leftWall.name = "wall"
+    leftWall.name = WALL
     physics.addBody( leftWall, "static", { density=wallDensity, friction=wallFriction, bounce=wallBounceRate })
 
     local rightWall = display.newImageRect( backGroup, "images/wall.png", 100, screenHeight + ballReleaseAreaHeight) -- The ballReleaseAreaHeight area is where the balls are created to fall in to the screen
     rightWall.x = screenLeft + screenWidth + 50
     rightWall.y = display.contentCenterY - (ballReleaseAreaHeight/2)
-    rightWall.name = "wall"
+    rightWall.name = WALL
     physics.addBody( rightWall, "static", { density=wallDensity, friction=wallFriction, bounce=wallBounceRate })
     
     -- Floor is a global variable since it will be used on multiple places (e.g. )
     floor = display.newImageRect( backGroup, "images/wall.png", display.actualContentWidth, 100 )
     floor.x = display.contentCenterX
     floor.y = screenTop + screenHeight + 50
-    floor.name = "wall"
+    floor.name = WALL
     physics.addBody( floor, "static", { density=wallDensity, friction=wallFriction, bounce=wallBounceRate })
     
 end
