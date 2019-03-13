@@ -1,9 +1,12 @@
 local composer = require( "composer" )
 local globalData = require( "globalData" )
+display.setDefault("background", 1, 1, 1)
+
+local developMode = true
 
 -- Set Global data
 globalData.difficulty = "Normal"
-globalData.musicOn = false --TODO: Weer op true zetten
+globalData.musicOn = true
 globalData.fxOn = true 
  
 -- Content Values for debugging
@@ -29,8 +32,12 @@ audio.reserveChannels( 1 )  -- Menu and Game music
 audio.setVolume( 0.3, { channel = 1 } )
 
 -- Go to the menu screen
-composer.gotoScene( "menu" )
+if (developMode) then
+    globalData.musicOn = false
+    composer.gotoScene( "menu" )
+    --composer.setVariable( "finalScore", 500001 )
+    --composer.gotoScene( "highscores")
+else
+    composer.gotoScene( "splash")
+end
 
-
---composer.setVariable( "finalScore", 500001 )
---composer.gotoScene( "highscores")

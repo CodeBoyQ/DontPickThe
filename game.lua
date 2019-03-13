@@ -195,6 +195,7 @@ local function handleTapBallEvent( event )
                 message = message .. "\nLuckily you had a negative \n energy blocker :-)"
                 messageSize =70
             else
+                message = message .. "\GAME OVER!!"
                 messageType = "Bad"
             end 
             -- Play explosionsound

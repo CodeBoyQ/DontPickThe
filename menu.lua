@@ -11,28 +11,39 @@ local screenWidth = display.actualContentWidth
 -- Sound variables
 local backgroundTrack
 local backgroundTrackChorus
+local buttonTap
 
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
 
+local function playButtonTap()
+	if (globalData.fxOn == true) then
+		audio.play( buttonTap )
+	end
+end
+
 local function gotoGame()
+	playButtonTap()
 	local options = { effect = "slideUp", time = 500}
     composer.gotoScene( "game" , options)
 end
  
 local function gotoTutorial()
+	playButtonTap()
 	local options = { effect = "slideLeft", time = 500 }
     composer.gotoScene( "tutorial" , options)
 end
 
 local function gotoHighScores()
+	playButtonTap()
 local options = { effect = "slideRight", time = 500 }
     composer.gotoScene( "highscores" , options)
 end
 
-local function setDifficulty() 
+local function setDifficulty()
+	playButtonTap()
 	local currenDifficulty = globalData.difficulty
 	if (currenDifficulty== "Easy") then
 		globalData.difficulty = "Normal"
@@ -50,6 +61,7 @@ local function setDifficulty()
 end
 
 local function toggleMusic(event)
+	playButtonTap()
 	if (globalData.musicOn == true) then
 		event.target.alpha = 0.3
 		audio.setVolume( 0, { channel = 1 } )
@@ -62,6 +74,7 @@ local function toggleMusic(event)
 end
 
 local function toggleFx(event)
+	playButtonTap()
 	if (globalData.fxOn == true) then
 		event.target.alpha = 0.3
 		globalData.fxOn = false
@@ -81,6 +94,7 @@ function playChorusMusic()
 	print("playChorusMusic")
 	audio.play( backgroundTrackChorus, { channel = 1, loops = 1, onComplete=playMusic } )
 end
+
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
 -- -----------------------------------------------------------------------------------
@@ -160,6 +174,7 @@ function scene:create( event )
 	-- Setup Audio
 	backgroundTrack = audio.loadStream( "audio/menuLoop.wav")
 	backgroundTrackChorus = audio.loadStream( "audio/menuLoopChorus.wav")
+	buttonTap = audio.loadSound ("audio/menuTapButton.wav")
 
 end
 
@@ -213,6 +228,10 @@ function scene:destroy( event )
 
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view
+
+	audio.dispose( backgroundTrack )
+	audio.dispose( backgroundTrackChorus )
+	audio.dispose( buttonTap )
 
 end
 

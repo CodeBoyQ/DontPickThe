@@ -1,6 +1,6 @@
 
 local composer = require( "composer" )
-
+local globalData = require( "globalData" )
 local scene = composer.newScene()
 
 -- Actual device screen values (This will differ per device)
@@ -9,12 +9,22 @@ local screenLeft = display.screenOriginX
 local screenHeight = display.actualContentHeight
 local screenWidth = display.actualContentWidth
 
+-- Sound variables
+local buttonTap
+
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
 
+local function playButtonTap()
+	if (globalData.fxOn == true) then
+		audio.play( buttonTap )
+	end
+end
+
 local function gotoMenu()
+	playButtonTap()
 	local options = { effect = "slideRight", time = 500 }
     composer.gotoScene( "menu" , options)
 end
@@ -40,6 +50,9 @@ function scene:create( event )
 	buttonBack.y = screenTop + (screenHeight * 0.92)
 	
 	buttonBack:addEventListener( "tap", gotoMenu )
+
+	-- Setup audio
+	buttonTap = audio.loadSound ("audio/menuTapButton.wav")
 
 end
 
@@ -89,6 +102,7 @@ function scene:destroy( event )
 
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view
+	audio.dispose( buttonTap )
 
 end
 
