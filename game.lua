@@ -76,9 +76,12 @@ local ballReleaseAreaMaxY = screenTop - ballRadius
 
 -- Sound variables
 local musicTrackGame
-local explosionSound
 local ballBallBounceSound
 local ballWallBounceSound
+local tapBallSound
+local tapNegativeBallSound
+local tapPositiveBallSound
+local tapPositiveBallExtraSound
 
 -- Setup Image sheet for ball
 local ballsSheetOptions =
@@ -132,6 +135,12 @@ local function clearBallTable()
 
 end
 
+local function playFx(sound)
+    if (globalData.fxOn) then
+        audio.play( sound )
+    end
+end
+
 local function updateStatubar()
     ballsText.text = nrOfBalls
     scoreText.text = score
@@ -163,7 +172,7 @@ local function determineGamestatus()
     end
 end
 
-local function explosion(tappedBall)
+local function emissionAnimation(tappedBall)
   emitter.x = tappedBall.x
   emitter.y = tappedBall.y
   emitter:start()
@@ -185,45 +194,48 @@ local function handleTapBallEvent( event )
         local messageSize = 100
 
         -- Play explotion particle
-        explosion (ball)
+        emissionAnimation (ball)
 
         if (ball.name == BOMB) then
             -- Player looses a life
             joker = joker - 1
             message = "Negative Energy!!!"
+            playFx(tapNegativeBallSound)
             if (joker == 0) then
                 message = message .. "\nLuckily you had a negative \n energy blocker :-)"
                 messageSize =70
             else
                 message = message .. "\GAME OVER!!"
                 messageType = "Bad"
-            end 
-            -- Play explosionsound
-            if (globalData.fxOn) then
-                audio.play( explosionSound )
-            end
+            end           
         elseif (ball.name == BALL7) then
             -- Player gets 7 extra balls and goes to the next level
             nrOfBalls = nrOfBalls + 7
             message = "Good energy!! :-) \n+7!"
+            playFx(tapPositiveBallSound)
         elseif (ball.name == BALL3) then
             -- Player gets 3 extra balls and goes to the next level
             nrOfBalls = nrOfBalls + 3
             message = "Good energy!! \n+3!"
+            playFx(tapPositiveBallSound)
         elseif (ball.name == BALL1) then
             -- Player gets 1 extra balls and goes to the next level
             nrOfBalls = nrOfBalls + 1
             message = "Good energy!! \n+1!"
+            playFx(tapPositiveBallSound)
         elseif (ball.name == JOKER) then
             -- Player gets 1 extra life
             joker = 1
             nrOfBalls = nrOfBalls - 1
             message = "You found a \nNegative energy \nblocker!"
             messageSize = 70
+            playFx(tapPositiveBallSound)
+            playFx(tapPositiveBallExtraSound)
         else
             -- Normal
             nrOfBalls = nrOfBalls - 1
             message = "You have \n chosen wisely!"
+            playFx(tapBallSound)
         end
 
         -- There can only be a maximum of [maxNrOfBalls] in the game
@@ -427,18 +439,25 @@ local function  setupExplosion()
 end
 
 local function setupSounds()
-    explosionSound = audio.loadSound( "audio/explosion.wav" )
     ballBallBounceSound = audio.loadSound ("audio/ball_ball_bounce.wav")
     ballWallBounceSound = audio.loadSound ("audio/ball_wall_bounce.wav")
     musicTrackGame = audio.loadStream( "audio/gameLoop.wav")
+    tapBallSound = audio.loadStream( "audio/tapBall.wav")
+    tapNegativeBallSound = audio.loadStream( "audio/tapNegative.wav")
+    tapPositiveBallSound = audio.loadStream( "audio/tapPositive.wav")
+    tapPositiveBallExtraSound = audio.loadStream( "audio/tapPositive_extra.wav")
+    
 end
 
 local function disposeSounds()
     audio.stop() -- All sounds on all Channels must be stopped before disposing them. This counts for the Music playing on Channel 1
-    audio.dispose( explosionSound )
     audio.dispose( musicTrackGame )
     audio.dispose( ballBallBounceSound )
     audio.dispose( ballWallBounceSound )
+    audio.dispose( tapBallSound)
+    audio.dispose( tapPositiveBallSound)
+    audio.dispose( tapPositiveBallExtraSound)
+    audio.dispose( tapNegativeBallSound)
 end
 
 local function setupBackground()
@@ -503,7 +522,7 @@ local function setupStatusbar()
     scoreBackground.anchorX = 0
     scoreBackground.x = screenLeft + (screenWidth * 0.55)
     scoreBackground.y = screenTop + (screenHeight * paddingTop)
-    scoreText = display.newText( uiGroup, score, screenLeft + (screenWidth * 0.81), scoreBackground.y, native.systemFont, 50 )
+    scoreText = display.newText( uiGroup, score, scoreBackground.x + scoreBackground.width - 50, scoreBackground.y, native.systemFont, 50 )
     scoreText.anchorX = scoreText.width
 
     -- Pause button
