@@ -9,6 +9,9 @@ local screenLeft = display.screenOriginX
 local screenHeight = display.actualContentHeight
 local screenWidth = display.actualContentWidth
 
+-- Fx/Music buttons
+local buttonMusicOnOff
+local buttonFxOnOff
 
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
@@ -23,6 +26,25 @@ end
 local function gotoMainMenu()
 	local options = { effect = "fade", time = 200, params = {shutdownGame = true}}
     composer.gotoScene( "game" , options) -- First ga back to game scene to clean up the game gracefully
+end
+
+local function refreshMusic()
+	if (globalData.musicOn == false) then
+		buttonMusicOnOff.alpha = 0.3
+		audio.setVolume( 0, { channel = 1 } )
+	else
+		buttonMusicOnOff.alpha = 1
+		audio.setVolume( 0.3, { channel = 1 } )
+	end
+	playMusic()
+end
+
+local function refreshFx()
+	if (globalData.fxOn == false) then
+		buttonFxOnOff.alpha = 0.3
+	else
+		buttonFxOnOff.alpha = 1
+	end
 end
 
 local function toggleMusic(event)
@@ -76,19 +98,13 @@ function scene:create( event )
 	buttonContinue.x = display.contentCenterX
 	buttonContinue.y = screenTop + (screenHeight * 0.59)
 
-	local buttonMusicOnOff = display.newImageRect( sceneGroup, "images/menu_button_music.png", 134, 139)
+	buttonMusicOnOff = display.newImageRect( sceneGroup, "images/menu_button_music.png", 134, 139)
 	buttonMusicOnOff.x = display.contentCenterX - (screenWidth * 0.07)
 	buttonMusicOnOff.y = screenTop + (screenHeight * 0.71)
-	if (globalData.musicOn == false) then
-		buttonMusicOnOff.alpha = 0.3
-	end
 
-	local buttonFxOnOff = display.newImageRect( sceneGroup, "images/menu_button_fx.png", 154, 137)
+	buttonFxOnOff = display.newImageRect( sceneGroup, "images/menu_button_fx.png", 154, 137)
 	buttonFxOnOff.x = display.contentCenterX + (screenWidth * 0.07)
 	buttonFxOnOff.y = screenTop + (screenHeight * 0.71)
-	if (globalData.fxOn == false) then
-		buttonFxOnOff.alpha = 0.3
-	end
 	
 	buttonMainMenu:addEventListener( "tap", gotoMainMenu )
 	buttonContinue:addEventListener( "tap", continueGame )
@@ -112,6 +128,8 @@ function scene:show( event )
 	elseif ( phase == "did" ) then
 		-- Code here runs when the scene is entirely on screen
 		print ("Showing Pause Scene")
+		refreshFx()
+		refreshMusic()
 
 	end
 end

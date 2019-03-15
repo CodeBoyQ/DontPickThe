@@ -13,6 +13,10 @@ local backgroundTrack
 local backgroundTrackChorus
 local buttonTap
 
+-- Fx/Music buttons
+local buttonMusicOnOff
+local buttonFxOnOff
+
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
@@ -60,8 +64,25 @@ local function setDifficulty()
 	end
 end
 
+local function refreshMusic()
+	if (globalData.musicOn == false) then
+		buttonMusicOnOff.alpha = 0.3
+		audio.setVolume( 0, { channel = 1 } )
+	else
+		buttonMusicOnOff.alpha = 1
+		audio.setVolume( 0.3, { channel = 1 } )
+	end
+end
+
+local function refreshFx()
+	if (globalData.fxOn == false) then
+		buttonFxOnOff.alpha = 0.3
+	else
+		buttonFxOnOff.alpha = 1
+	end
+end
+
 local function toggleMusic(event)
-	playButtonTap()
 	if (globalData.musicOn == true) then
 		event.target.alpha = 0.3
 		audio.setVolume( 0, { channel = 1 } )
@@ -74,7 +95,6 @@ local function toggleMusic(event)
 end
 
 local function toggleFx(event)
-	playButtonTap()
 	if (globalData.fxOn == true) then
 		event.target.alpha = 0.3
 		globalData.fxOn = false
@@ -150,20 +170,14 @@ function scene:create( event )
 	buttonHighscores.x = display.contentCenterX
 	buttonHighscores.y = screenTop + (screenHeight * 0.74)
 
-	local buttonMusicOnOff = display.newImageRect( sceneGroup, "images/menu_button_music.png", 134, 139)
+	buttonMusicOnOff = display.newImageRect( sceneGroup, "images/menu_button_music.png", 134, 139)
 	buttonMusicOnOff.x = display.contentCenterX - (screenWidth * 0.07)
 	buttonMusicOnOff.y = screenTop + (screenHeight * 0.84)
-	if (globalData.musicOn == false) then
-		buttonMusicOnOff.alpha = 0.3
-	end
 
-	local buttonFxOnOff = display.newImageRect( sceneGroup, "images/menu_button_fx.png", 154, 137)
+	buttonFxOnOff = display.newImageRect( sceneGroup, "images/menu_button_fx.png", 154, 137)
 	buttonFxOnOff.x = display.contentCenterX + (screenWidth * 0.07)
 	buttonFxOnOff.y = screenTop + (screenHeight * 0.84)
-	if (globalData.fxOn == false) then
-		buttonFxOnOff.alpha = 0.3
-	end
-	
+
 	buttonStart:addEventListener( "tap", gotoGame )
 	buttonDifficulty:addEventListener( "tap", setDifficulty )
 	buttonTutorial:addEventListener( "tap", gotoTutorial )
@@ -194,11 +208,12 @@ function scene:show( event )
 		-- Code here runs when the scene is entirely on screen
 		print ("Showing Menu Scene")
 
-		-- Start the music!
-		if(not globalData.musicOn) then
-			audio.setVolume( 0, { channel = 1 } )
-		end
+		-- Init Music
 		playMusic()
+
+		-- Update the music and fx buttons
+		refreshMusic()
+		refreshFx()
 
 	end
 end
