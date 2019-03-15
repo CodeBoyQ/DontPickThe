@@ -81,8 +81,6 @@ local ballType              = {BALL7, BALL3, 	BALL1, 	JOKER, 	BOMB, 	NORMAL}
 local ballProbabilityEasy   = {3,		5,		10,		5,		10,		50} -- 40, 10, 50
 local ballProbabilityNormal = {5,		10,		15,		3,		20,		40} -- 40, 20, 40
 local ballProbabilityHard   = {2,		6,		10,		2,		40,		30} -- 20, 40, 30
---ballProbabilityNormal = ballProbabilityHard
---{3,		5,		10,		5,		2,		50} 
 
 -- The ballTypes and ballProbability variables determine the ballProbabilitySequence
 -- e.g. ballTypes = {A, B, C} and a ballProbability = {1, 2, 3}
