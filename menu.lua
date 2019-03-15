@@ -83,6 +83,7 @@ local function refreshFx()
 end
 
 local function toggleMusic(event)
+	playButtonTap()
 	if (globalData.musicOn == true) then
 		event.target.alpha = 0.3
 		audio.setVolume( 0, { channel = 1 } )
@@ -95,6 +96,7 @@ local function toggleMusic(event)
 end
 
 local function toggleFx(event)
+	playButtonTap()
 	if (globalData.fxOn == true) then
 		event.target.alpha = 0.3
 		globalData.fxOn = false

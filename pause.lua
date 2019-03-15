@@ -13,17 +13,28 @@ local screenWidth = display.actualContentWidth
 local buttonMusicOnOff
 local buttonFxOnOff
 
+-- Sound variables
+local buttonTap
+
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
 
+local function playButtonTap()
+	if (globalData.fxOn == true) then
+		audio.play( buttonTap )
+	end
+end
+
 local function continueGame()
+	playButtonTap()
 	local options = { effect = "fade", time = 200}
     composer.gotoScene( "game" , options)
 end
  
 local function gotoMainMenu()
+	playButtonTap()
 	local options = { effect = "fade", time = 200, params = {shutdownGame = true}}
     composer.gotoScene( "game" , options) -- First ga back to game scene to clean up the game gracefully
 end
@@ -47,6 +58,7 @@ local function refreshFx()
 end
 
 local function toggleMusic(event)
+	playButtonTap()
 	if (globalData.musicOn == true) then
 		event.target.alpha = 0.3
 		audio.setVolume( 0, { channel = 1 } )
@@ -59,6 +71,7 @@ local function toggleMusic(event)
 end
 
 local function toggleFx(event)
+	playButtonTap()
 	if (globalData.fxOn == true) then
 		event.target.alpha = 0.3
 		globalData.fxOn = false
@@ -110,6 +123,9 @@ function scene:create( event )
 	buttonMusicOnOff:addEventListener( "tap", toggleMusic )
 	buttonFxOnOff:addEventListener( "tap", toggleFx )
 
+	-- Setup Audio
+	buttonTap = audio.loadSound ("audio/menuTapButton.wav")
+
 end
 
 
@@ -158,6 +174,7 @@ function scene:destroy( event )
 
 	local sceneGroup = self.view
 	-- Code here runs prior to the removal of scene's view
+	audio.dispose( buttonTap )
 
 end
 
