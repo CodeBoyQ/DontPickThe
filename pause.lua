@@ -36,7 +36,6 @@ local function refreshMusic()
 		buttonMusicOnOff.alpha = 1
 		audio.setVolume( 0.3, { channel = 1 } )
 	end
-	playMusic()
 end
 
 local function refreshFx()

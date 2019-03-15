@@ -34,7 +34,8 @@ audio.setVolume( 0.3, { channel = 1 } )
 -- Go to the menu screen
 if (developMode) then
     globalData.musicOn = false
-    composer.gotoScene( "menu" )
+    audio.setVolume( 0, { channel = 1 } )
+    composer.gotoScene( "game" )
     --composer.setVariable( "finalScore", 500001 )
     --composer.gotoScene( "highscores")
 else

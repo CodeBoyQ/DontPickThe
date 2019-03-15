@@ -52,15 +52,42 @@ local backGroup
 local mainGroup
 local uiGroup
 
+-- Object name constants
+local BOMB = "Bomb"
+local BALL7 = "7Balls"
+local BALL3 = "3Balls"
+local BALL1 = "1Balls"
+local JOKER = "Joker"
+local NORMAL = "Normal"
+local WALL = "Wall"
+
+local normalFrame = 1
+local ball1Frame = 2
+local ball3Frame = 3
+local ball7Frame = 4
+local jokerFrame = 5
+local bombFrame = 6
+
 -- Game settings
 local maxNrOfBalls = 25
 
--- Probability system (order small to large chance) minimum is 10
-local chance7Balls    = 50 -- Every ball has 1 out of x chance to give you 7 extra balls
-local chance3Balls    =  20 -- Every ball has 1 out of x chance to give you 3 extra balls
-local chance1Balls    =  7 -- Every ball has 1 out of x chance to give you 1 extra balls
-local chanceJoker     =  20 -- Every ball has 1 out of x chance to give you a Joker. If the user already has a joker this chance = 0
-local chanceExtraBomb =  20 -- Every ball has 1 out of x chance to be an extra Bomb
+-- Each difficultyLevel has a different balance for the probility of certain types of balls to occur
+-- E.g. a ballType = {A, B, C} and ballProbability = {30, 10, 50}
+-- Means that each ball has a chance of 30/90 to be "A", a chance of 10/90 to be "B" and a chance of 50/90 to be "C"
+-- Use the ballProbabilityEasy to design the difficulty levels. The total amount is not important. It is the balance that counts
+-- NOTE: Each game has at lest 1 BOMB. The BOMB below creates extra BOMBS
+-- NOTE: Verdeling Goed (BALL7, BALL3, BALL1), Neutraal (NORMAL) en Slecht (BOMB)
+local ballType              = {BALL7, BALL3, 	BALL1, 	JOKER, 	BOMB, 	NORMAL}    
+local ballProbabilityEasy   = {3,		5,		10,		5,		10,		50} -- 40, 10, 50
+local ballProbabilityNormal = {5,		10,		15,		3,		20,		40} -- 40, 20, 40
+local ballProbabilityHard   = {2,		6,		10,		2,		40,		30} -- 20, 40, 30
+--ballProbabilityNormal = ballProbabilityHard
+--{3,		5,		10,		5,		2,		50} 
+
+-- The ballTypes and ballProbability variables determine the ballProbabilitySequence
+-- e.g. ballTypes = {A, B, C} and a ballProbability = {1, 2, 3}
+-- will result in a ballProbabilitySequence = {A, B, B, C, C, C}
+local ballProbabilitySequence = {}
 
 -- Debug options, set all to false for production mode
 local ballContentVisible = true
@@ -103,21 +130,6 @@ local sequencesBall = {
     },
 }
 
--- Object name constants
-local BOMB = "Bomb"
-local BALL7 = "7Balls"
-local BALL3 = "3Balls"
-local BALL1 = "1Balls"
-local JOKER = "Joker"
-local WALL = "Wall"
-
-local normalFrame = 1
-local ball1Frame = 2
-local ball3Frame = 3
-local ball7Frame = 4
-local jokerFrame = 5
-local bombFrame = 6
-
 local function pauseGame()
     gameIsPaused = true
 	local options = { effect = "fade", time = 200}
@@ -125,7 +137,6 @@ local function pauseGame()
 end
 
 local function clearBallTable()
-
     -- Remove balls from table and display
     for i = #ballsTable, 1, -1 do
         local thisBall = ballsTable[i]
@@ -133,6 +144,37 @@ local function clearBallTable()
         table.remove( ballsTable, i )
     end
 
+end
+
+-- Constructs the ballProbabilitySequence for the chosen difficulty level
+local function setGameDifficulty()
+    local ballProbability
+    if (globalData.difficulty == "Easy") then
+        ballProbability = ballProbabilityEasy
+    elseif (globalData.difficulty == "Normal") then
+        ballProbability = ballProbabilityNormal
+    elseif (globalData.difficulty == "Hard") then
+        ballProbability = ballProbabilityHard
+    end
+
+    local index = 1
+    for i = 1, #ballProbability do
+		local currentBall = ballType[i]
+        local ballOccurancies = ballProbability[i]
+        print ("" .. currentBall .. " " .. ballOccurancies)
+        for j = 1, ballOccurancies do
+            
+			ballProbabilitySequence[index] = currentBall
+			index = index + 1
+		end
+    end
+
+    --print ("Size: " .. #ballProbabilitySequence)
+    --local sequence = ""
+    --for m = 1, #ballProbabilitySequence do
+    --    sequence = sequence .. " " .. ballProbabilitySequence[m]
+    --end
+    --print ("Sequence: " .. sequence)
 end
 
 local function playFx(sound)
@@ -288,6 +330,12 @@ local function handleTapBallEvent( event )
 
 end
 
+function getRandomBallType()
+    -- Pick a random ball from the ballProbabilitySequence
+    local randomIndex = math.random(1, #ballProbabilitySequence)
+    return ballProbabilitySequence[randomIndex]
+end
+
 -- This function is not local, since it is used in multiple places
 function dropBalls(numberOfBalls)
 
@@ -305,17 +353,7 @@ function dropBalls(numberOfBalls)
         if (bomb == i) then
             newBall.name = BOMB
         else
-            if (math.random(1, chance7Balls) == 7) then
-                newBall.name = BALL7
-            elseif (math.random(1, chance3Balls) == 3) then
-                newBall.name = BALL3
-            elseif (math.random(1, chance1Balls) == 1) then
-                newBall.name = "1Ball"
-            elseif (joker == 0 and math.random(1, chanceJoker) == 8) then -- If the player already has a Joker, no Joker balls will be created
-                newBall.name = JOKER
-            elseif (math.random(1, chanceExtraBomb) == 3) then
-                newBall.name = BOMB
-            end
+            newBall.name = getRandomBallType()
         end
 
         -- Make the content visible or not
@@ -564,6 +602,9 @@ function scene:create( event )
 
     physics.pause()  -- Temporarily pause the physics engine
 
+    -- Setup game level
+    setGameDifficulty()
+
 	-- Set up display groups
 	backGroup = display.newGroup()  -- Display group for the background image
 	sceneGroup:insert( backGroup )  -- Insert into the scene's view group
@@ -582,6 +623,7 @@ function scene:create( event )
     -- Setup sounds
     setupSounds()
 
+    -- Start the game
     dropBalls(nrOfBalls)
 
 end
@@ -624,9 +666,6 @@ function scene:show( event )
 
             -- Inititialise the Music
             audio.stop(1) -- Stop Menu Music on Channel 1
-            if(not globalData.musicOn) then -- If music is disabled then set volume to zero
-                audio.setVolume( 0, { channel = 1 } )
-            end
             audio.play( musicTrackGame, { channel = 1, loops = -1 } ) -- Start Game Music on Channel 1
 		end
 	end

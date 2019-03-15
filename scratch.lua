@@ -4,9 +4,62 @@ local composer = require( "composer" )
 local scene = composer.newScene()
 
 
+local function test1()
+	--local normal = 60
+	--local ball1 = 20
+	--local ball3 = 10
+	--local ball7 = 8
+	--local joker = 2
+	local NORMAL = "Normal"
+	local BOMB = "Bomb"
+	local BALL7 = "7Balls"
+	local BALL3 = "3Balls"
+	local BALL1 = "1Balls"
+	local JOKER = "Joker"
+
+	
+
+	local ballType        = {BALL7, BALL3, 	BALL1, 	JOKER, 	BOMB, 	NORMAL}
+	local ballProbability = {1,		2,		5,		1,		1,		10}
+
+	local ballArray = {}
+	local index = 1
+
+	-- Calculate total
+	for i = 1, #ballProbability do
+		local currentBall = ballType[i]
+		local ballOccurancies = ballProbability[i]
+		for j = 1, ballOccurancies do
+			--print (currentBall)
+			ballArray[index] = currentBall
+			index = index + 1
+		end
+	end
 
 
+	print ("Size: " .. #ballArray)
+	for m = 1, #ballArray do
+		print (ballArray[m])
+	end
+end
 
+local function test2()
+	local ballArray = {}
+
+	print ("ballAraay" .. #ballArray)
+	for i = 1, 5 do
+		ballArray[i] = "abc"
+	end
+
+	print ("size: " .. #ballArray)
+	for m = 1, #ballArray do
+		print (ballArray[m])
+	end
+end
+
+local function test3()
+	print (math.random(1, 5))
+end
 
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
@@ -24,9 +77,9 @@ function scene:create( event )
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
-	local background = display.newImageRect( sceneGroup, "background.png", 800, 1400 )
-    background.x = display.contentCenterX
-	background.y = display.contentCenterY
+	test1()
+
+
 
 end
 
