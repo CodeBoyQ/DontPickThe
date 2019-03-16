@@ -2,7 +2,7 @@ local composer = require( "composer" )
 local globalData = require( "globalData" )
 display.setDefault("background", 1, 1, 1)
 
-local developMode = true
+local developMode = false
 
 -- Set Global data
 globalData.difficulty = "Normal"
