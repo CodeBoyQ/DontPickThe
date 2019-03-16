@@ -2,12 +2,14 @@ local composer = require( "composer" )
 local globalData = require( "globalData" )
 display.setDefault("background", 1, 1, 1)
 
-local developMode = false
+local developMode = true
 
 -- Set Global data
 globalData.difficulty = "Normal"
 globalData.musicOn = true
 globalData.fxOn = true 
+globalData.lastGameScore = -1 -- Used for Highscores
+globalData.lastGameDifficulty = globalData.difficulty -- Used to show Highscores
  
 -- Content Values for debugging
 print( "Scaling: " .. display.pixelWidth / display.actualContentWidth )
@@ -35,9 +37,12 @@ audio.setVolume( 0.3, { channel = 1 } )
 if (developMode) then
     globalData.musicOn = false
     audio.setVolume( 0, { channel = 1 } )
-    composer.gotoScene( "game" )
+    
     --composer.setVariable( "finalScore", 500001 )
     --composer.gotoScene( "highscores")
+    --globalData.lastGameScore = 0 -- Used for Highscores
+    --globalData.lastGameDifficulty = "Easy" -- Used to show Highscores
+    composer.gotoScene( "menu" )
 else
     composer.gotoScene( "splash")
 end

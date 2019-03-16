@@ -76,8 +76,7 @@ function scene:create( event )
 
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
-
-	test1()
+	test3()
 
 
 

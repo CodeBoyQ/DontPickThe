@@ -79,7 +79,7 @@ local maxNrOfBalls = 25
 -- NOTE: Verdeling Goed (BALL7, BALL3, BALL1), Neutraal (NORMAL) en Slecht (BOMB)
 local ballType              = {BALL7, BALL3, 	BALL1, 	JOKER, 	BOMB, 	NORMAL}    
 local ballProbabilityEasy   = {3,		5,		10,		5,		10,		50} -- 40, 10, 50
-local ballProbabilityNormal = {3,		7,		15,		5,		0,		60} -- 30, 10, 60
+local ballProbabilityNormal = {3,		7,		15,		5,		10,		60} -- 30, 10, 60
 local ballProbabilityHard   = {2,		6,		10,		2,		40,		30} -- 20, 40, 30
 
 -- The ballTypes and ballProbability variables determine the ballProbabilitySequence
@@ -193,7 +193,8 @@ local function updateStatubar()
 end
 
 local function gameOver()
-    composer.setVariable( "finalScore", score ) --TODO: Geen ouderwetse setVariable gebruiken
+    globalData.lastGameScore = score
+    globalData.lastGameDifficulty = globalData.difficulty
     composer.gotoScene( "highscores", { time=800, effect="crossFade" } )
 end
 
@@ -246,6 +247,7 @@ local function handleTapBallEvent( event )
                 messageSize =70
             else
                 message = message .. "\nGAME OVER!!"
+                nrOfBalls = 0 -- You do not get any more points after Game Over
                 messageType = "Bad"
             end           
         elseif (ball.name == BALL7) then
