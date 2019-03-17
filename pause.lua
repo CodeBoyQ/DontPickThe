@@ -1,4 +1,3 @@
-
 local composer = require( "composer" )
 local globalData = require( "globalData" )
 local scene = composer.newScene()
