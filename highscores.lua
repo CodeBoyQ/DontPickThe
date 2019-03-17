@@ -196,7 +196,7 @@ local function updateHighscoreDisplay (selectedDifficulty)
 		score:setFillColor (1.0, 1.0, 1.0) -- Reset color
 
 		if (globalData.lastGameDifficulty == selectedDifficulty) then	
-			if (tonumber(score.text) == globalData.lastGameScore) then
+			if (globalData.lastGameScore > 0 and tonumber(score.text) == globalData.lastGameScore) then
 
 				-- Display the score of the last game in a different color
 				rankNum:setFillColor( 1.0, 1.0, 0 )
@@ -275,7 +275,7 @@ function scene:create( event )
 	buttonBack.y = screenTop + (screenHeight * 0.92)
 
 	-- New Highscore
-	newHighScoreText = display.newText( sceneGroup, "New Highscore!!!", display.contentCenterX, screenTop + (screenHeight * 0.92) - 250, native.systemFont, 90 )
+	newHighScoreText = display.newText( sceneGroup, "New Highscore!!!", display.contentCenterX, screenTop + (screenHeight * 0.92) - 180, native.systemFont, 90 )
 	newHighScoreText:setFillColor (1.0, 1.0, 0)
 	newHighScoreText.isVisible = false
 

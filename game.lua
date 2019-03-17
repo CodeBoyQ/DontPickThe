@@ -86,10 +86,6 @@ local ballProbabilityHard   = {2,		6,		10,		2,		40,		30} -- 20, 40, 30
 -- e.g. ballTypes = {A, B, C} and a ballProbability = {1, 2, 3}
 -- will result in a ballProbabilitySequence = {A, B, B, C, C, C}
 local ballProbabilitySequence = {}
-
--- Debug options, set all to false for production mode
-local ballContentVisible = true
-local dumpMemoryDebugMode = false
     
 -- The boundaries of the area (out of screen) from where the balls will be released and the radius of the balls
 local ballRadius = 150
@@ -141,7 +137,6 @@ local function clearBallTable()
         display.remove( thisBall )
         table.remove( ballsTable, i )
     end
-
 end
 
 -- Constructs the ballProbabilitySequence for the chosen difficulty level
@@ -357,7 +352,7 @@ function dropBalls(numberOfBalls)
         end
 
         -- Make the content visible or not
-        if (ballContentVisible == true) then
+        if (globalData.ballContentVisible == true) then
             showBallContent(newBall)
         else
             hideBallContent(newBall)
@@ -584,7 +579,7 @@ local printMemUsage = function()
 end
 
 -- Only load memory monitor if running in simulator
-if (dumpMemoryDebugMode == true and system.getInfo("environment") == "simulator") then
+if (globalData.dumpMemoryDebugMode == true and system.getInfo("environment") == "simulator") then
     Runtime:addEventListener( "enterFrame", printMemUsage)
 end
 

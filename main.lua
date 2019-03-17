@@ -2,14 +2,18 @@ local composer = require( "composer" )
 local globalData = require( "globalData" )
 display.setDefault("background", 1, 1, 1)
 
-local developMode = true
+local developMode = false
 
--- Set Global data
+-- Set Global data defaults
 globalData.difficulty = "Normal"
 globalData.musicOn = true
 globalData.fxOn = true 
 globalData.lastGameScore = -1 -- Used for Highscores
 globalData.lastGameDifficulty = globalData.difficulty -- Used to show Highscores
+
+-- Debug options defaults
+globalData.ballContentVisible = false
+globalData.dumpMemoryDebugMode = false
  
 -- Content Values for debugging
 print( "Scaling: " .. display.pixelWidth / display.actualContentWidth )
@@ -35,14 +39,18 @@ audio.setVolume( 0.3, { channel = 1 } )
 
 -- Go to the menu screen
 if (developMode) then
+    -- Settings for develop mode
     globalData.musicOn = false
     audio.setVolume( 0, { channel = 1 } )
-    
-    --composer.setVariable( "finalScore", 500001 )
-    --composer.gotoScene( "highscores")
-    --globalData.lastGameScore = 0 -- Used for Highscores
+    globalData.ballContentVisible = true
+    globalData.dumpMemoryDebugMode = false
+
+    -- Highscore screen
+    --globalData.lastGameScore = 100 -- Used for Highscores
     --globalData.lastGameDifficulty = "Easy" -- Used to show Highscores
-    composer.gotoScene( "menu" )
+    --composer.gotoScene( "highscores" )
+
+    composer.gotoScene( "game")
 else
     composer.gotoScene( "splash")
 end
