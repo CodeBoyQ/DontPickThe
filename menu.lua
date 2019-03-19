@@ -108,12 +108,10 @@ end
 
 -- These functions had to be global, since they call each other
 function playMusic()
-	print("playMusic")
 	audio.play( backgroundTrack, { channel = 1, loops = 1, onComplete=playChorusMusic } )
 end
 
 function playChorusMusic()
-	print("playChorusMusic")
 	audio.play( backgroundTrackChorus, { channel = 1, loops = 1, onComplete=playMusic } )
 end
 
