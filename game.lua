@@ -1,6 +1,8 @@
 
 local composer = require( "composer" )
 local globalData = require( "globalData" )
+local applovin = require( "plugin.applovin" )
+
 local scene = composer.newScene()
 
 -- -----------------------------------------------------------------------------------
@@ -190,7 +192,14 @@ end
 local function gameOver()
     globalData.lastGameScore = score
     globalData.lastGameDifficulty = globalData.difficulty
-    composer.gotoScene( "highscores", { time=800, effect="crossFade" } )
+
+    if (applovin.isLoaded( "interstitial" )) then
+        -- The ad is loaded at the beginning of the game, so we asume that it will be loaded by now
+        applovin.show( "interstitial" )
+    else
+        -- This shouldn't happen, because it meanse that the ad hasn't been loaded
+        composer.gotoScene( "highscores", { time=800, effect="crossFade" } )
+    end
 end
 
 local function determineGamestatus()
@@ -618,6 +627,11 @@ function scene:create( event )
     -- Setup sounds
     setupSounds()
 
+    -- At the start of each game, preload an ad, to make it show faster after the game is over
+    if (not applovin.isLoaded( "interstitial" )) then
+        applovin.load( "interstitial" )
+    end
+
     -- Start the game
     dropBalls(nrOfBalls)
 
@@ -638,6 +652,7 @@ function scene:show( event )
 		-- Code here runs when the scene is still off screen (but is about to come on screen)
 
     elseif ( phase == "did" ) then
+
         -- Code here runs when the scene is entirely on screen
         print ("Showing Game Scene")
         if (gameIsPaused) then
@@ -652,6 +667,7 @@ function scene:show( event )
             end
         
         else
+
             -- Starting new game
             print("-Starting new game")
             physics.start()

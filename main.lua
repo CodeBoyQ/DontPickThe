@@ -1,5 +1,6 @@
 local composer = require( "composer" )
 local globalData = require( "globalData" )
+local applovin = require( "plugin.applovin" )
 display.setDefault("background", 1, 1, 1)
 
 local developMode = true
@@ -10,6 +11,11 @@ globalData.musicOn = true
 globalData.fxOn = true 
 globalData.lastGameScore = -1 -- Used for Highscores
 globalData.lastGameDifficulty = globalData.difficulty -- Used to show Highscores
+
+-- Initialize the AppLovin plugin (which will already preload the first ad)
+local mySdkKey = "lJGWoNRVdEDq-xW2-C9DNx9VtFCH9vIWTfKcbuG8L6_zGVD8iN4L4rI8ET8T6_twep0gRzIBFk6zOa9DNZVbnX"
+applovin.init( globalData.adListener, { sdkKey=mySdkKey, verboseLogging=false, testMode=false } )
+
 
 -- Debug options defaults
 globalData.ballContentVisible = false
@@ -51,7 +57,8 @@ if (developMode) then
     --globalData.lastGameDifficulty = "Easy" -- Used to show Highscores
     --composer.gotoScene( "highscores" )
 
-    composer.gotoScene( "showadd")
+    composer.gotoScene( "menu")
+
 else
     composer.gotoScene( "splash")
 end
