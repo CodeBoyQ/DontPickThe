@@ -42,7 +42,10 @@ settings =
 	--
 	plugins =
 	{
-
+        ["plugin.applovin"] =
+        {
+            publisherId = "com.coronalabs"
+        },
 	},
 
 	--

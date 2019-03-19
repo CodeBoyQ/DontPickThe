@@ -2,7 +2,7 @@ local composer = require( "composer" )
 local globalData = require( "globalData" )
 display.setDefault("background", 1, 1, 1)
 
-local developMode = false
+local developMode = true
 
 -- Set Global data defaults
 globalData.difficulty = "Normal"
@@ -51,7 +51,7 @@ if (developMode) then
     --globalData.lastGameDifficulty = "Easy" -- Used to show Highscores
     --composer.gotoScene( "highscores" )
 
-    composer.gotoScene( "game")
+    composer.gotoScene( "showadd")
 else
     composer.gotoScene( "splash")
 end
