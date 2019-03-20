@@ -90,12 +90,11 @@ local ballProbabilityHard   = {2,		6,		10,		2,		40,		30} -- 20, 40, 30
 local ballProbabilitySequence = {}
     
 -- The boundaries of the area (out of screen) from where the balls will be released and the radius of the balls
-local ballRadius = 150
 local ballReleaseAreaHeight = screenHeight
-local ballReleaseAreaMinX = screenLeft + ballRadius
-local ballReleaseAreaMaxX = screenLeft + screenWidth - ballRadius
-local ballReleaseAreaMinY = screenTop - ballReleaseAreaHeight + ballRadius
-local ballReleaseAreaMaxY = screenTop - ballRadius
+local ballReleaseAreaMinX = screenLeft + globalData.ballRadius
+local ballReleaseAreaMaxX = screenLeft + screenWidth - globalData.ballRadius
+local ballReleaseAreaMinY = screenTop - ballReleaseAreaHeight + globalData.ballRadius
+local ballReleaseAreaMaxY = screenTop - globalData.ballRadius
 
 -- Sound variables
 local musicTrackGame
@@ -105,26 +104,6 @@ local tapBallSound
 local tapNegativeBallSound
 local tapPositiveBallSound
 local tapPositiveBallExtraSound
-
--- Setup Image sheet for ball
-local ballsSheetOptions =
-{
-    width = ballRadius*2,
-    height = ballRadius*2,
-    numFrames = 8
-}
-
-local ballsImageSheet = graphics.newImageSheet( "images/balls_imagesheet.png", ballsSheetOptions )
-
-local sequencesBall = {
-    {
-        name = "notUsed",
-        start = 1,
-        count = 8,
-        time = 800,
-        loopCount = 0
-    },
-}
 
 local function pauseGame()
     gameIsPaused = true
@@ -350,7 +329,7 @@ function dropBalls(numberOfBalls)
     for i = numberOfBalls, 1, -1 do
   
         -- Create the ball and insert it to the table
-        newBall = display.newSprite( mainGroup, ballsImageSheet, sequencesBall )
+        newBall = display.newSprite( mainGroup, globalData.ballsImageSheet, globalData.sequencesBall )
         table.insert( ballsTable, newBall )
 
         -- Determine the ball type
@@ -372,7 +351,7 @@ function dropBalls(numberOfBalls)
         newBall.y = math.random (ballReleaseAreaMinY, ballReleaseAreaMaxY)
 
         -- Add physics and listener
-        physics.addBody( newBall, "dynamic", { radius=ballRadius, density=ballDensity, friction = ballFriction, bounce=ballBounceRate } )
+        physics.addBody( newBall, "dynamic", { radius=globalData.ballRadius, density=ballDensity, friction = ballFriction, bounce=ballBounceRate } )
         newBall:addEventListener( "tap", handleTapBallEvent )
 
     end

@@ -42,7 +42,7 @@ end
 
 local function gotoHighScores()
 	playButtonTap()
-local options = { effect = "slideRight", time = 500 }
+	local options = { effect = "slideRight", time = 500 }
     composer.gotoScene( "highscores" , options)
 end
 

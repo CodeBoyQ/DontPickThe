@@ -12,6 +12,27 @@ globalData.fxOn = true
 globalData.lastGameScore = -1 -- Used for Highscores
 globalData.lastGameDifficulty = globalData.difficulty -- Used to show Highscores
 
+globalData.ballRadius = 150 -- Don't change this!
+
+globalData.ballsSheetOptions =
+{
+    width = globalData.ballRadius * 2,
+    height = globalData.ballRadius * 2,
+    numFrames = 8
+}
+
+globalData.ballsImageSheet = graphics.newImageSheet( "images/balls_imagesheet.png", globalData.ballsSheetOptions )
+
+globalData.sequencesBall = {
+    {
+        name = "notUsed",
+        start = 1,
+        count = 8,
+        time = 800,
+        loopCount = 0
+    },
+}
+
 -- Initialize the AppLovin plugin (which will already preload the first ad)
 local mySdkKey = "lJGWoNRVdEDq-xW2-C9DNx9VtFCH9vIWTfKcbuG8L6_zGVD8iN4L4rI8ET8T6_twep0gRzIBFk6zOa9DNZVbnX"
 applovin.init( globalData.adListener, { sdkKey=mySdkKey, verboseLogging=false, testMode=false } )
@@ -27,13 +48,11 @@ display.setStatusBar( display.HiddenStatusBar )
 -- Seed the random number generator
 math.randomseed( os.time() )
  
--- Reserve channel 1 for background music
-audio.reserveChannels( 1 )  -- Menu and Game music
+-- Global Audio Setup
+audio.reserveChannels( 1 )  -- Reserve channel 1 for background music
+audio.setVolume( 0.3, { channel = 1 } ) -- Reduce the overall volume of the channel
 
--- Reduce the overall volume of the channel
-audio.setVolume( 0.3, { channel = 1 } )
-
--- Go to the menu screen
+-- Start the Game
 if (developMode) then
 
     -- Content Values for debugging
@@ -57,7 +76,7 @@ if (developMode) then
     --globalData.lastGameDifficulty = "Easy" -- Used to show Highscores
     --composer.gotoScene( "highscores" )
 
-    composer.gotoScene( "menu")
+    composer.gotoScene( "game")
 
 else
     composer.gotoScene( "splash")

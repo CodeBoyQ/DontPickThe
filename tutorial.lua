@@ -29,6 +29,27 @@ local function gotoMenu()
     composer.gotoScene( "menu" , options)
 end
 
+-- Image sheet for ball (Note: Put in GlobalData, because it is used in Game and Tutorial scene)
+ballsSheetOptions =
+{
+	width = 300,
+	height = 300,
+	numFrames = 8
+}
+
+ballsImageSheet = graphics.newImageSheet( "images/balls_imagesheet.png", ballsSheetOptions )
+
+sequencesBall = {
+	{
+		name = "notUsed",
+		start = 1,
+		count = 8,
+		time = 800,
+		loopCount = 0
+	},
+}
+
+
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
 -- -----------------------------------------------------------------------------------
@@ -43,7 +64,13 @@ function scene:create( event )
 
 	local background = display.newImageRect( sceneGroup, "images/tutorial_background.png", screenWidth, screenHeight )
 	background.x = display.contentCenterX
-    background.y = display.contentCenterY
+	background.y = display.contentCenterY
+	
+	local title = display.newImageRect( sceneGroup, "images/tutorial_title.png", 849, 269 )
+    title.x = display.contentCenterX
+	title.y = screenTop + (screenHeight * 0.15)
+
+
 
 	local buttonBack = display.newImageRect( sceneGroup, "images/back_button.png", 260, 144)
 	buttonBack.x = display.contentCenterX
