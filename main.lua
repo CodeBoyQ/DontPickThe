@@ -3,7 +3,7 @@ local globalData = require( "globalData" )
 local applovin = require( "plugin.applovin" )
 display.setDefault("background", 1, 1, 1)
 
-local developMode = true
+local developMode = false
 
 -- Set Global data defaults
 globalData.difficulty = "Normal"
@@ -13,6 +13,13 @@ globalData.lastGameScore = -1 -- Used for Highscores
 globalData.lastGameDifficulty = globalData.difficulty -- Used to show Highscores
 
 globalData.ballRadius = 150 -- Don't change this!
+
+globalData.normalFrame = 1
+globalData.ball1Frame = 2
+globalData.ball3Frame = 3
+globalData.ball7Frame = 4
+globalData.jokerFrame = 5
+globalData.bombFrame = 6
 
 globalData.ballsSheetOptions =
 {
@@ -76,7 +83,7 @@ if (developMode) then
     --globalData.lastGameDifficulty = "Easy" -- Used to show Highscores
     --composer.gotoScene( "highscores" )
 
-    composer.gotoScene( "game")
+    composer.gotoScene( "tutorial")
 
 else
     composer.gotoScene( "splash")
