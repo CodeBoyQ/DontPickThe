@@ -3,7 +3,7 @@ local globalData = require( "globalData" )
 local applovin = require( "plugin.applovin" )
 display.setDefault("background", 1, 1, 1)
 
-local developMode = true
+local developMode = false
 
 -- Set Global data defaults
 globalData.difficulty = "Normal"

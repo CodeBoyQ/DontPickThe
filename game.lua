@@ -74,6 +74,9 @@ local ballsImageSheet = globalData.ballsImageSheet
 local sequencesBall = globalData.sequencesBall
 local ballRadius = globalData.ballRadius
 
+-- Easteregg
+local easterEgg = 0
+
 -- Game settings
 local maxNrOfBalls = 25
 
@@ -119,7 +122,14 @@ end
 local function pauseGame()
     gameIsPaused = true
     playFx(buttonTap)
-	local options = { effect = "fade", time = 200}
+    local options = { effect = "fade", time = 200}
+    
+    if (easterEgg == 10) then
+        playFx( tapPositiveBallExtraSound )
+        globalData.ballContentVisible = true
+    end
+    easterEgg = 0
+
     composer.gotoScene( "pause" , options)
 end
 
@@ -207,6 +217,10 @@ local function emissionAnimation(tappedBall)
   emitter.x = tappedBall.x
   emitter.y = tappedBall.y
   emitter:start()
+end
+
+local function activateEasterEgg( event )
+    easterEgg = easterEgg + 1
 end
 
 local function handleTapBallEvent( event )
@@ -560,6 +574,7 @@ local function setupStatusbar()
     pauseButton.x = screenLeft + (screenWidth * 0.93)
     pauseButton.y = screenTop + (screenHeight * paddingTop)
 
+    jokerImage:addEventListener( "tap", activateEasterEgg)
     pauseButton:addEventListener( "tap", pauseGame )
 
 end

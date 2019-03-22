@@ -182,7 +182,6 @@ function scene:show( event )
 
 		-- Init Music
 		playMusic()
-		buttonTap = audio.loadSound ("audio/menuTapButton.wav") -- To fix the bug, that after one game, the menu tap buttons don't play
 
 		-- Update the music and fx buttons
 		refreshMusic()
@@ -203,8 +202,6 @@ function scene:hide( event )
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
 		print ("Hiding Menu Scene")
-		audio.dispose( buttonTap )
-
 	end
 end
 
@@ -230,6 +227,7 @@ scene:addEventListener( "create", scene )
 scene:addEventListener( "show", scene )
 scene:addEventListener( "hide", scene )
 scene:addEventListener( "destroy", scene )
+audio.dispose( buttonTap )
 -- -----------------------------------------------------------------------------------
 
 return scene
