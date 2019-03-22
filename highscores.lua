@@ -41,7 +41,7 @@ local highscoresDisplayTable = {} -- Reference to the highscore display scores
 local newHighScoreText -- New Highscore label
 
 local function playButtonTap()
-	if (globalData.fxOn == true) then
+	if (globalData.musicOn == true) then
 		audio.play( buttonTap )
 	end
 end

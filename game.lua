@@ -108,9 +108,17 @@ local tapBallSound
 local tapNegativeBallSound
 local tapPositiveBallSound
 local tapPositiveBallExtraSound
+local buttonTap
+
+local function playFx(sound)
+    if (globalData.musicOn) then
+        audio.play( sound )
+    end
+end
 
 local function pauseGame()
     gameIsPaused = true
+    playFx(buttonTap)
 	local options = { effect = "fade", time = 200}
     composer.gotoScene( "pause" , options)
 end
@@ -155,12 +163,6 @@ local function setGameDifficulty()
     --print ("Sequence: " .. sequence)
 end
 
-local function playFx(sound)
-    if (globalData.fxOn) then
-        audio.play( sound )
-    end
-end
-
 local function updateStatubar()
     ballsText.text = nrOfBalls
     scoreText.text = score
@@ -178,6 +180,7 @@ local function gameOver()
 
     if (applovin.isLoaded( "interstitial" )) then
         -- The ad is loaded at the beginning of the game, so we asume that it will be loaded by now
+        audio.setVolume( 0, { channel = 1 } ) -- Stop the music, so it will not interfere with the ad
         applovin.show( "interstitial" )
     else
         -- This shouldn't happen, because it meanse that the ad hasn't been loaded
@@ -413,13 +416,13 @@ local function onCollision( event )
         if (velocity1 > minVelocityForCollision or velocity2 > minVelocityForCollision) then
             if ( obj1.name == WALL or obj2.name == WALL ) then
                 -- Ball hits wall
-                if (globalData.fxOn) then
+                if (globalData.musicOn) then
                     --audio.play( ballWallBounceSound )
                 end
             elseif ( obj1.name ~= WALL and obj2.name ~= WALL ) then
                 -- Ball to ball collision
                 -- Also check if the y position of the ball is in the viewable area
-                if (globalData.fxOn and (obj1.y > screenTop and obj1.y < (screenTop + screenHeight))) then
+                if (globalData.musicOn and (obj1.y > screenTop and obj1.y < (screenTop + screenHeight))) then
                     audio.play( ballBallBounceSound )
                 end
             end
@@ -471,6 +474,7 @@ local function setupSounds()
     tapNegativeBallSound = audio.loadStream( "audio/tapNegative.wav")
     tapPositiveBallSound = audio.loadStream( "audio/tapPositive.wav")
     tapPositiveBallExtraSound = audio.loadStream( "audio/tapPositive_extra.wav")
+    buttonTap = audio.loadSound ("audio/menuTapButton.wav")
     
 end
 
@@ -483,6 +487,7 @@ local function disposeSounds()
     audio.dispose( tapPositiveBallSound)
     audio.dispose( tapPositiveBallExtraSound)
     audio.dispose( tapNegativeBallSound)
+    audio.dispose( buttonTap )
 end
 
 local function setupBackground()

@@ -40,7 +40,7 @@ local buttonBack
 -- -----------------------------------------------------------------------------------
 
 local function playButtonTap()
-	if (globalData.fxOn == true) then
+	if (globalData.musicOn == true) then
 		audio.play( buttonTap )
 	end
 end

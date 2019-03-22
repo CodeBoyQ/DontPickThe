@@ -13,9 +13,8 @@ local backgroundTrack
 local backgroundTrackChorus
 local buttonTap
 
--- Fx/Music buttons
+-- Sound buttons
 local buttonMusicOnOff
-local buttonFxOnOff
 
 -- -----------------------------------------------------------------------------------
 -- Code outside of the scene event functions below will only be executed ONCE unless
@@ -23,7 +22,7 @@ local buttonFxOnOff
 -- -----------------------------------------------------------------------------------
 
 local function playButtonTap()
-	if (globalData.fxOn == true) then
+	if (globalData.musicOn == true) then
 		audio.play( buttonTap )
 	end
 end
@@ -74,14 +73,6 @@ local function refreshMusic()
 	end
 end
 
-local function refreshFx()
-	if (globalData.fxOn == false) then
-		buttonFxOnOff.alpha = 0.3
-	else
-		buttonFxOnOff.alpha = 1
-	end
-end
-
 local function toggleMusic(event)
 	playButtonTap()
 	if (globalData.musicOn == true) then
@@ -92,17 +83,6 @@ local function toggleMusic(event)
 		event.target.alpha = 1
 		audio.setVolume( 0.3, { channel = 1 } )
 		globalData.musicOn = true
-	end
-end
-
-local function toggleFx(event)
-	playButtonTap()
-	if (globalData.fxOn == true) then
-		event.target.alpha = 0.3
-		globalData.fxOn = false
-	else
-		event.target.alpha = 1
-		globalData.fxOn = true
 	end
 end
 
@@ -171,19 +151,14 @@ function scene:create( event )
 	buttonHighscores.y = screenTop + (screenHeight * 0.74)
 
 	buttonMusicOnOff = display.newImageRect( sceneGroup, "images/menu_button_music.png", 134, 139)
-	buttonMusicOnOff.x = display.contentCenterX - (screenWidth * 0.07)
+	buttonMusicOnOff.x = display.contentCenterX
 	buttonMusicOnOff.y = screenTop + (screenHeight * 0.84)
-
-	buttonFxOnOff = display.newImageRect( sceneGroup, "images/menu_button_fx.png", 154, 137)
-	buttonFxOnOff.x = display.contentCenterX + (screenWidth * 0.07)
-	buttonFxOnOff.y = screenTop + (screenHeight * 0.84)
 
 	buttonStart:addEventListener( "tap", gotoGame )
 	buttonDifficulty:addEventListener( "tap", setDifficulty )
 	buttonTutorial:addEventListener( "tap", gotoTutorial )
 	buttonHighscores:addEventListener( "tap", gotoHighScores )
 	buttonMusicOnOff:addEventListener( "tap", toggleMusic )
-	buttonFxOnOff:addEventListener( "tap", toggleFx )
 
 	-- Setup Audio
 	backgroundTrack = audio.loadStream( "audio/menuLoop.wav")
@@ -191,9 +166,6 @@ function scene:create( event )
 	buttonTap = audio.loadSound ("audio/menuTapButton.wav")
 
 end
-
-
-
 
 -- show()
 function scene:show( event )
@@ -210,10 +182,10 @@ function scene:show( event )
 
 		-- Init Music
 		playMusic()
+		buttonTap = audio.loadSound ("audio/menuTapButton.wav") -- To fix the bug, that after one game, the menu tap buttons don't play
 
 		-- Update the music and fx buttons
 		refreshMusic()
-		refreshFx()
 
 	end
 end
@@ -231,6 +203,7 @@ function scene:hide( event )
 	elseif ( phase == "did" ) then
 		-- Code here runs immediately after the scene goes entirely off screen
 		print ("Hiding Menu Scene")
+		audio.dispose( buttonTap )
 
 	end
 end
@@ -246,7 +219,6 @@ function scene:destroy( event )
 
 	audio.dispose( backgroundTrack )
 	audio.dispose( backgroundTrackChorus )
-	audio.dispose( buttonTap )
 
 end
 

@@ -8,9 +8,8 @@ local screenLeft = display.screenOriginX
 local screenHeight = display.actualContentHeight
 local screenWidth = display.actualContentWidth
 
--- Fx/Music buttons
+-- Music buttons
 local buttonMusicOnOff
-local buttonFxOnOff
 
 -- Sound variables
 local buttonTap
@@ -21,7 +20,7 @@ local buttonTap
 -- -----------------------------------------------------------------------------------
 
 local function playButtonTap()
-	if (globalData.fxOn == true) then
+	if (globalData.musicOn == true) then
 		audio.play( buttonTap )
 	end
 end
@@ -48,14 +47,6 @@ local function refreshMusic()
 	end
 end
 
-local function refreshFx()
-	if (globalData.fxOn == false) then
-		buttonFxOnOff.alpha = 0.3
-	else
-		buttonFxOnOff.alpha = 1
-	end
-end
-
 local function toggleMusic(event)
 	playButtonTap()
 	if (globalData.musicOn == true) then
@@ -68,18 +59,6 @@ local function toggleMusic(event)
 		globalData.musicOn = true
 	end
 end
-
-local function toggleFx(event)
-	playButtonTap()
-	if (globalData.fxOn == true) then
-		event.target.alpha = 0.3
-		globalData.fxOn = false
-	else
-		event.target.alpha = 1
-		globalData.fxOn = true
-	end
-end
-
 
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
@@ -110,17 +89,12 @@ function scene:create( event )
 	buttonContinue.y = screenTop + (screenHeight * 0.59)
 
 	buttonMusicOnOff = display.newImageRect( sceneGroup, "images/menu_button_music.png", 134, 139)
-	buttonMusicOnOff.x = display.contentCenterX - (screenWidth * 0.07)
+	buttonMusicOnOff.x = display.contentCenterX
 	buttonMusicOnOff.y = screenTop + (screenHeight * 0.71)
 
-	buttonFxOnOff = display.newImageRect( sceneGroup, "images/menu_button_fx.png", 154, 137)
-	buttonFxOnOff.x = display.contentCenterX + (screenWidth * 0.07)
-	buttonFxOnOff.y = screenTop + (screenHeight * 0.71)
-	
 	buttonMainMenu:addEventListener( "tap", gotoMainMenu )
 	buttonContinue:addEventListener( "tap", continueGame )
 	buttonMusicOnOff:addEventListener( "tap", toggleMusic )
-	buttonFxOnOff:addEventListener( "tap", toggleFx )
 
 	-- Setup Audio
 	buttonTap = audio.loadSound ("audio/menuTapButton.wav")
@@ -142,7 +116,6 @@ function scene:show( event )
 	elseif ( phase == "did" ) then
 		-- Code here runs when the scene is entirely on screen
 		print ("Showing Pause Scene")
-		refreshFx()
 		refreshMusic()
 
 	end

@@ -3,12 +3,11 @@ local globalData = require( "globalData" )
 local applovin = require( "plugin.applovin" )
 display.setDefault("background", 1, 1, 1)
 
-local developMode = false
+local developMode = true
 
 -- Set Global data defaults
 globalData.difficulty = "Normal"
-globalData.musicOn = true
-globalData.fxOn = true 
+globalData.musicOn = true 
 globalData.lastGameScore = -1 -- Used for Highscores
 globalData.lastGameDifficulty = globalData.difficulty -- Used to show Highscores
 
@@ -83,7 +82,7 @@ if (developMode) then
     --globalData.lastGameDifficulty = "Easy" -- Used to show Highscores
     --composer.gotoScene( "highscores" )
 
-    composer.gotoScene( "tutorial")
+    composer.gotoScene( "menu")
 
 else
     composer.gotoScene( "splash")
